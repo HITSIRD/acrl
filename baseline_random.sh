@@ -1,0 +1,1 @@
+python run.py --type random --learner ppo --env ant-maze --seed 1

@@ -1,0 +1,1 @@
+python run.py --type alp_gmm --learner ppo --env ant-maze --seed 1

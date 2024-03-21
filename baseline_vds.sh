@@ -1,0 +1,1 @@
+/home/wenyongyan/下载/currot-icml/venv/bin/python run.py --type vds --learner ppo --env ant-maze --seed 1
