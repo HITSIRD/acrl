@@ -2,7 +2,7 @@ import argparse
 
 import torch
 
-from deep_sprl.util.parameter_parser import parse_parameters
+from acrl.util.parameter_parser import parse_parameters
 
 
 def main():
@@ -22,28 +22,28 @@ def main():
     torch.set_num_threads(args.n_cores)
 
     if args.env == "point_mass_2d":
-        from deep_sprl.experiments import PointMass2DExperiment
+        from acrl.experiments import PointMass2DExperiment
         exp = PointMass2DExperiment(args.base_log_dir, args.type, args.learner, parameters, args.seed)
     elif args.env == "maze":
-        from deep_sprl.experiments import MazeExperiment
+        from acrl.experiments import MazeExperiment
         exp = MazeExperiment(args.base_log_dir, args.type, args.learner, parameters, args.seed)
     elif args.env == 'minigrid-a':
-        from deep_sprl.experiments.minigrid_a_experiment import MinigridAExperiment
+        from acrl.experiments.minigrid_a_experiment import MinigridAExperiment
         exp = MinigridAExperiment(args.base_log_dir, args.type, args.learner, parameters, args.seed)
     elif args.env == 'minigrid-b':
-        from deep_sprl.experiments.minigrid_b_experiment import MinigridBExperiment
+        from acrl.experiments.minigrid_b_experiment import MinigridBExperiment
         exp = MinigridBExperiment(args.base_log_dir, args.type, args.learner, parameters, args.seed)
     elif args.env == 'minigrid-c':
-        from deep_sprl.experiments.minigrid_c_experiment import MinigridCExperiment
+        from acrl.experiments.minigrid_c_experiment import MinigridCExperiment
         exp = MinigridCExperiment(args.base_log_dir, args.type, args.learner, parameters, args.seed)
     elif args.env == 'u-maze':
-        from deep_sprl.experiments.u_maze_experiment import  UMazeExperiment
+        from acrl.experiments.u_maze_experiment import  UMazeExperiment
         exp = UMazeExperiment(args.base_log_dir, args.type, args.learner, parameters, args.seed)
     elif args.env == 'ant-maze':
-        from deep_sprl.experiments.ant_maze_experiment import AntMazeExperiment
+        from acrl.experiments.ant_maze_experiment import AntMazeExperiment
         exp = AntMazeExperiment(args.base_log_dir, args.type, args.learner, parameters, args.seed)
     elif args.env == 'swimmer-maze':
-        from deep_sprl.experiments.swimmer_maze_experiment import SwimmerMazeExperiment
+        from acrl.experiments.swimmer_maze_experiment import SwimmerMazeExperiment
         exp = SwimmerMazeExperiment(args.base_log_dir, args.type, args.learner, parameters, args.seed)
     else:
        raise RuntimeError("Unknown environment '%s'!" % args.env)

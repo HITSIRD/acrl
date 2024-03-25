@@ -4,8 +4,8 @@ import matplotlib
 import numpy as np
 from matplotlib import cm
 
-from deep_sprl.experiments.ant_maze_experiment import AntMazeExperiment
-from deep_sprl.experiments.swimmer_maze_experiment import SwimmerMazeExperiment
+from acrl.experiments.ant_maze_experiment import AntMazeExperiment
+from acrl.experiments.swimmer_maze_experiment import SwimmerMazeExperiment
 from misc.util import add_plot
 import matplotlib.pyplot as plt
 

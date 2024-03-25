@@ -4,7 +4,7 @@ import matplotlib
 import numpy as np
 from matplotlib import cm
 
-from deep_sprl.experiments import MinigridAExperiment
+from acrl.experiments import MinigridAExperiment
 from misc.util import add_plot
 import matplotlib.pyplot as plt
 

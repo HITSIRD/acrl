@@ -11,13 +11,13 @@ def main():
 
     args = parser.parse_args()
     if args.env == "point_mass_2d":
-        from deep_sprl.experiments import PointMass2DExperiment
+        from acrl.experiments import PointMass2DExperiment
         exp = PointMass2DExperiment
     elif args.env == "maze":
-        from deep_sprl.experiments import MazeExperiment
+        from acrl.experiments import MazeExperiment
         exp = MazeExperiment
     elif args.env == "minigrid":
-        from deep_sprl.experiments import MinigridExperiment
+        from acrl.experiments import MinigridExperiment
         exp = MinigridExperiment
     else:
         raise RuntimeError("Unknown environment: %s" % args.env)

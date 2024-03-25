@@ -4,7 +4,7 @@ import matplotlib
 import numpy as np
 from matplotlib import cm
 
-from deep_sprl.experiments.u_maze_experiment import UMazeExperiment
+from acrl.experiments.u_maze_experiment import UMazeExperiment
 from misc.util import add_plot
 import matplotlib.pyplot as plt
 
@@ -83,5 +83,5 @@ def performance_plot(ax=None, path=None, base_log_dir="logs"):
 if __name__ == "__main__":
     os.makedirs("figures", exist_ok=True)
     # base_log_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "logs")
-    base_log_dir = "/home/wenyongyan/文档/currot-icml_副本/logs"
-    performance_plot(path="figures/u_maze_performance.pdf", base_log_dir=base_log_dir)
+    base_log_dir = "/home/wenyongyan/文档/acrl/logs"
+    performance_plot(path="figures/u_maze/1.pdf", base_log_dir=base_log_dir)

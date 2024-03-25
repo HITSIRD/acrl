@@ -2,7 +2,7 @@ import os
 import pickle
 import numpy as np
 import matplotlib.pyplot as plt
-from deep_sprl.experiments import PointMass2DExperiment
+from acrl.experiments import PointMass2DExperiment
 from misc.util import add_plot
 
 plt.rc('text.latex', preamble=r'\usepackage{amsmath}'

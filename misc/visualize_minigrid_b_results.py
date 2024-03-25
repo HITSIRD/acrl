@@ -5,7 +5,7 @@ import numpy as np
 from matplotlib import cm
 from misc.util import add_plot
 import matplotlib.pyplot as plt
-from deep_sprl.experiments import MinigridBExperiment
+from acrl.experiments import MinigridBExperiment
 
 plt.rc('text.latex', preamble=r'\usepackage{amsmath}'
                               r'\newcommand{\currot}{\textsc{currot}}'

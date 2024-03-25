@@ -3,7 +3,7 @@ import sys
 import numpy as np
 from matplotlib import cm
 import matplotlib.pyplot as plt
-from deep_sprl.experiments import PointMass2DExperiment, CurriculumType
+from acrl.experiments import PointMass2DExperiment, CurriculumType
 from misc.visualize_point_mass_results import currot_plot, sprl_plot
 
 sys.path.append(os.path.realpath(os.path.join(os.path.dirname(__file__), "../currot-icml")))

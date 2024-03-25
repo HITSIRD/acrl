@@ -4,7 +4,7 @@ import pickle
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import brentq, minimize, NonlinearConstraint
-from deep_sprl.teachers.spl.wasserstein_interpolation import WassersteinInterpolation
+from acrl.teachers.spl.wasserstein_interpolation import WassersteinInterpolation
 
 import os
 
