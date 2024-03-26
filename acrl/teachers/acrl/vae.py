@@ -438,6 +438,7 @@ class RolloutStorageVAE(object):
         self.max_traj_len = max_traj_len
         self.max_buffer_size = max_traj_size  # maximum buffer len (number of trajectories)
         self.insert_idx = 0  # at which index we're currently inserting new data
+        self.step_idx = 0  # at which index we're currently inserting the new step
         self.buffer_len = 0  # how much of the buffer has been fill
 
         if self.max_buffer_size > 0:
@@ -451,20 +452,40 @@ class RolloutStorageVAE(object):
 
     def clear(self):
         self.insert_idx = 0  # at which index we're currently inserting new data
+        self.step_idx = 0
         self.buffer_len = 0  # how much of the buffer has been fill
 
-    def insert(self, trajectory):
-        prev_state, action, reward, next_state, task = trajectory
-        trajectory_len = len(action)
-        self.prev_state[self.insert_idx, :trajectory_len] = torch.stack(prev_state).squeeze(1)
-        self.action[self.insert_idx, :trajectory_len] = torch.stack(action).squeeze(1)
-        self.reward[self.insert_idx, :trajectory_len] = torch.stack(reward).unsqueeze(1)
-        self.next_state[self.insert_idx, :trajectory_len] = torch.stack(next_state).squeeze(1)
-        self.task[self.insert_idx] = torch.from_numpy(np.array(task))
-        self.trajectory_lens[self.insert_idx] = trajectory_len
+    def insert(self, step=None, trajectory=None, done=False):
+        if step is not None:
+            prev_state, action, reward, next_state, task = step
+            self.prev_state[self.insert_idx, self.step_idx] = torch.from_numpy(prev_state)
+            self.action[self.insert_idx, self.step_idx] = torch.tensor(action)
+            self.reward[self.insert_idx, self.step_idx] = torch.tensor([reward])
+            self.next_state[self.insert_idx, self.step_idx] = torch.from_numpy(next_state)
+            self.trajectory_lens[self.insert_idx] = self.step_idx + 1
 
-        self.insert_idx += 1
-        self.buffer_len = self.insert_idx
+            self.step_idx += 1
+            if done:
+                self.task[self.insert_idx] = torch.from_numpy(np.array(task))
+                self.episode_return[self.insert_idx] = self.reward[self.insert_idx].sum().numpy()
+                self.insert_idx = (self.insert_idx + 1) % self.max_buffer_size
+                self.step_idx = 0
+            self.buffer_len = max(self.buffer_len, self.insert_idx)
+        elif trajectory is not None:
+            prev_state, action, reward, next_state, task = trajectory
+            trajectory_len = len(action)
+            self.prev_state[self.insert_idx, :trajectory_len] = torch.stack(prev_state).squeeze(1)
+            self.action[self.insert_idx, :trajectory_len] = torch.stack(action).squeeze(1)
+            self.reward[self.insert_idx, :trajectory_len] = torch.stack(reward).unsqueeze(1)
+            self.next_state[self.insert_idx, :trajectory_len] = torch.stack(next_state).squeeze(1)
+            self.task[self.insert_idx] = torch.from_numpy(np.array(task))
+            self.trajectory_lens[self.insert_idx] = trajectory_len
+            self.episode_return[self.insert_idx] = self.reward[self.insert_idx].sum().numpy()
+
+            self.insert_idx = self.insert_idx + 1 % self.max_buffer_size
+            self.buffer_len = max(self.buffer_len, self.insert_idx)
+        else:
+            raise NotImplementedError
 
     def ready_for_update(self):
         return len(self) > 0

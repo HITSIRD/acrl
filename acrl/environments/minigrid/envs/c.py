@@ -3,10 +3,10 @@ from __future__ import annotations
 import numpy as np
 
 # import utils.helpers
-from deep_sprl.environments.minigrid.core.grid import Grid
-from deep_sprl.environments.minigrid.core.mission import MissionSpace
-from deep_sprl.environments.minigrid.core.world_object import Door, Goal, Wall, Key, Lava
-from deep_sprl.environments.minigrid.minigrid_env import MiniGridEnv
+from acrl.environments.minigrid.core.grid import Grid
+from acrl.environments.minigrid.core.mission import MissionSpace
+from acrl.environments.minigrid.core.world_object import Door, Goal, Wall, Key, Lava
+from acrl.environments.minigrid.minigrid_env import MiniGridEnv
 
 # from utils.evaluation import get_test_rollout
 

@@ -37,6 +37,7 @@ class ACRLWrapper(BaseWrapper):
             obs = np.concatenate((obs, self.env.context))
 
         self.last_obs = obs.copy()
+        self.last_obs_wo_context = obs_wo_context
         self.cur_initial_state = obs.copy()
         if not with_context:
             return obs
@@ -45,15 +46,44 @@ class ACRLWrapper(BaseWrapper):
 
     def step(self, action, update=True, with_context=False):
         step = self.env.step(action)
+        current_step = step[0], action, step[1], self.last_obs_wo_context, self.cur_context
+        self.last_obs_wo_context = step[0].copy()
+
             # step = np.concatenate((step[0], self.env.unwrapped.context)), step[1], step[2], step[3]
         if with_context:
             step = step[0], np.concatenate((step[0], self.env.context)), step[1], step[2], step[3]
         else:
             step = np.concatenate((step[0], self.env.context)), step[1], step[2], step[3]
         self.last_obs = step[0].copy()
+
+        # insert VAE buffer
+        self.teacher.vae.rollout_storage.insert(step=current_step, done=step[2])
         if update:
             self.update(step)
         return step
+
+    def update(self, step):
+        reward = step[3]["reward"] if self.reward_from_info else step[1]
+        self.undiscounted_reward += reward
+        self.discounted_reward += self.cur_disc * reward
+        self.cur_disc *= self.discount_factor
+        self.step_length += 1.
+
+        if step[2]:
+            self.done_callback(step, self.cur_initial_state.copy(), self.cur_context, self.discounted_reward,
+                               self.undiscounted_reward)
+
+            self.stats_buffer.update_buffer((self.undiscounted_reward, self.discounted_reward, self.step_length))
+            self.context_trace_buffer.update_buffer((self.undiscounted_reward, self.discounted_reward,
+                                                     self.processed_context.copy()))
+            self.undiscounted_reward = 0.
+            self.discounted_reward = 0.
+            self.cur_disc = 1.
+            self.step_length = 0.
+
+            self.cur_context = None
+            self.processed_context = None
+            self.cur_initial_state = None
 
     def done_callback(self, step, cur_initial_state, cur_context, discounted_reward, undiscounted_reward):
         # We currently rely on the learner being set on the environment after its creation

@@ -3,12 +3,12 @@
 config = {
     # --- CURRICULUM ---
     'step_size': 0.9,
-    'return_delta': -70,  # select traj sample which return is greater than return_delta
-    'update_delta': -60,  # if mean of return > update_delta, then update context dist
-    'task_buffer_size': 50,
-    'lsp_ratio': 0.25,  # LSP ratio
+    'return_delta': -60,  # select traj sample which return is greater than return_delta
+    'update_delta': -50,  # if mean of return > update_delta, then update context dist
+    'task_buffer_size': 256,
+    'lsp_ratio': 0.5,  # LSP ratio
     'ebu_ratio': 0,  # EBU ratio
-    'noise_std': [0.5, 0.5],
+    'noise_std': [1.0, 1.0],
     'add_noise': True,
     # 'enable_latent_selection_sample': True,
     # 'num_test': 20,
@@ -21,9 +21,9 @@ config = {
     'lr_task_decoder': 0.005,
     'size_vae_buffer': 2048,
     'vae_buffer_add_thresh': 1,
-    'vae_batch_num_trajectories': 16,
+    'vae_batch_num_trajectories': 32,
     'vae_avg_reconstruction_terms': False,
-    'num_vae_update': 2,
+    'num_vae_update': 5,
     'max_task_decoder_update': 8,
     'task_decoder_loss_threshold': 0.001,
     'pretrain_len': 0,

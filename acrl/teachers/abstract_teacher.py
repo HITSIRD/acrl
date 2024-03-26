@@ -129,8 +129,8 @@ class BaseWrapper(gym.Env):
 
             return mean_reward, mean_disc_reward, mean_step_length, np.sum(steps), success_rate
 
-    def get_encountered_contexts(self):
-        return self.context_trace_buffer.read_buffer()
+    def get_encountered_contexts(self, reset=None):
+        return self.context_trace_buffer.read_buffer(reset=reset)
 
 
 def _worker(remote, parent_remote, env_fn_wrapper):

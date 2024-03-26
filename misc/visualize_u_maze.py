@@ -84,4 +84,4 @@ if __name__ == "__main__":
     os.makedirs("figures", exist_ok=True)
     # base_log_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "logs")
     base_log_dir = "/home/wenyongyan/文档/acrl/logs"
-    performance_plot(path="figures/u_maze/1.pdf", base_log_dir=base_log_dir)
+    performance_plot(path="figures/u_maze/0.2.pdf", base_log_dir=base_log_dir)

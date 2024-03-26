@@ -1,3 +1,4 @@
+import json
 import os
 import time
 import torch
@@ -308,7 +309,7 @@ class ExperimentCallback:
                 os.makedirs(iter_log_dir, exist_ok=True)
 
                 with open(os.path.join(iter_log_dir, "context_trace.pkl"), "wb") as f:
-                    pickle.dump(self.env_wrapper.get_encountered_contexts(), f)
+                    pickle.dump(self.env_wrapper.get_encountered_contexts(reset=False), f)
 
                 self.learner.save(iter_log_dir)
                 if self.env_wrapper.teacher is not None:
@@ -412,6 +413,11 @@ class AbstractExperiment(ABC):
 
         callback = ExperimentCallback(log_directory=log_directory, **callback_params)
         model.learn(total_timesteps=timesteps, reset_num_timesteps=False, callback=callback)
+
+        if self.curriculum == CurriculumType.ACRL:
+            with open(os.path.join(log_directory, 'config.json'), "w") as f:
+                json.dump(callback_params['env_wrapper'].teacher.config, f)
+                print('write config to {}'.format(os.path.join(log_directory, 'config.json')))
 
     def evaluate(self):
         log_dir = self.get_log_dir()

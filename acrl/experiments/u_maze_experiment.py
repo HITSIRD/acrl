@@ -97,6 +97,12 @@ class UMazeExperiment(AbstractExperiment):
 
     def create_environment(self, evaluation=False):
         env = gym.make('PointMaze1-v1')
+
+        config['action_dim'] = env.action_space.shape[0]
+        config['context_dim'] = self.INITIAL_MEAN.shape[0]
+        config['state_dim'] = env.observation_space.shape[0]
+        config['max_episode_len'] = env.env.spec.max_episode_steps
+
         if evaluation or self.curriculum.default():
             teacher = DistributionSampler(self.target_sampler, self.LOWER_CONTEXT_BOUNDS, self.UPPER_CONTEXT_BOUNDS)
             env = BaseWrapper(env, teacher, self.DISCOUNT_FACTOR, context_visible=True,
@@ -138,10 +144,6 @@ class UMazeExperiment(AbstractExperiment):
             env = VDSWrapper(env, teacher, self.DISCOUNT_FACTOR, context_visible=True,
                              context_post_processing=context_post_processing)
         elif self.curriculum.acrl():
-            config['action_dim'] = env.action_space.shape[0]
-            config['context_dim'] = self.INITIAL_MEAN.shape[0]
-            config['state_dim'] = env.observation_space.shape[0]
-            config['max_episode_len'] = env.env.spec.max_episode_steps
             teacher = ACRL(self.TARGET_MEANS.copy(), self.INITIAL_MEAN.copy(), self.INITIAL_VARIANCE.copy(),
                            self.LOWER_CONTEXT_BOUNDS, self.UPPER_CONTEXT_BOUNDS, config, self.get_log_dir())
             env = ACRLWrapper(env, teacher, self.DISCOUNT_FACTOR, episodes_per_update=self.EP_PER_UPDATE,
@@ -205,7 +207,7 @@ class UMazeExperiment(AbstractExperiment):
     def evaluate_learner(self, path):
         model_load_path = os.path.join(path, "model.zip")
         model = self.learner.load_for_evaluation(model_load_path, self.vec_eval_env)
-        for i in range(0, 32):
+        for i in range(0, 30):
             obs = self.vec_eval_env.reset()
             done = False
             while not done:

@@ -6,11 +6,12 @@ import torch
 
 from acrl.environments.minigrid.envs import AEnv, BEnv, CEnv
 from acrl.teachers.abstract_teacher import AbstractTeacher
-from acrl.teachers.acrl.util import sample_trajectory, trajectory_embedding
+from acrl.teachers.acrl.util import sample_trajectory, trajectory_embedding, get_latent_map
 from acrl.teachers.acrl.vae import VAE
 from acrl.teachers.sampler import MinigridSampler
 from acrl.teachers.dummy_teachers import UniformSampler
 from acrl.util.device import device
+
 
 class ACRL(AbstractTeacher):
 
@@ -42,29 +43,11 @@ class ACRL(AbstractTeacher):
 
     def update_distribution(self, episode_count, env):
         if episode_count % self.config['update_freq'] == 0:
-            self.vae.rollout_storage.clear()
-            ret = []
 
-            for i in range(self.config['task_buffer_size']):
-                task = self.teacher.sample()
-                episode_latent_means, episode_latent_logvars, episode_prev_obs, episode_next_obs, episode_actions, \
-                    episode_rewards, episode_returns = sample_trajectory(env, self.policy, self.vae.transition_encoder,
-                                                                         task)
-                trajectory = episode_prev_obs, episode_actions, episode_rewards, episode_next_obs, task
-                self.vae.rollout_storage.insert(trajectory)
-                ret.append(episode_returns)
-
+            ret = env.get_encountered_contexts(reset=False)[0]
+            size = len(ret)
+            ret = np.array(ret)[-min(size, self.config['task_buffer_size']):]
             print(f'mean of return: {np.mean(ret)}({np.std(ret)})')
-
-            # ret = []
-            # for i in range(100):
-            #     task = self.target
-            #     episode_latent_means, episode_latent_logvars, episode_prev_obs, episode_next_obs, episode_actions, \
-            #         episode_rewards, episode_returns = sample_trajectory(env, self.policy, self.vae.transition_encoder,
-            #                                                              task)
-            #
-            #     ret.append(episode_returns)
-            # print(f'episode count episode_count, target return eval {np.mean(ret)}({np.std(ret)})')
 
             #  evaluate current policy
             if hasattr(env.env, 'plot_evaluate_task'):
@@ -87,7 +70,7 @@ class ACRL(AbstractTeacher):
                 if not self.config['decode_task']:
                     self.vae.update_task_decoder()
 
-                self.teacher.update(env, self.policy, self.vae.transition_encoder, self.vae.task_decoder)
+                self.teacher.update(env, self.policy, self.vae)
                 print('update distribution...')
 
     def sample(self):
@@ -106,37 +89,6 @@ class ACRL(AbstractTeacher):
         # self.success_buffer.load(path)
         # self.sampler.load(path)
         pass
-
-
-class AbstractSampler(ABC):
-
-    def __init__(self, context_bounds: Tuple[np.ndarray, np.ndarray]):
-        self.noise = 1e-3 * (context_bounds[1] - context_bounds[0])
-
-    def update(self, context: np.ndarray, ret: float) -> NoReturn:
-        pass
-
-    def __call__(self, samples: np.ndarray) -> np.ndarray:
-        return self.select(samples) + np.random.uniform(-self.noise, self.noise)
-
-    @abstractmethod
-    def select(self, samples: np.ndarray) -> np.ndarray:
-        pass
-
-    def save(self, path: str) -> NoReturn:
-        pass
-
-    def load(self, path: str) -> NoReturn:
-        pass
-
-
-# class UniformSampler(AbstractSampler):
-#
-#     def __init__(self, context_bounds: Tuple[np.ndarray, np.ndarray]):
-#         super(UniformSampler, self).__init__(context_bounds)
-#
-#     def select(self, samples: np.ndarray) -> np.ndarray:
-#         return samples[np.random.randint(0, samples.shape[0]), :]
 
 
 class LatentSpacePrediction:
@@ -158,8 +110,6 @@ class LatentSpacePrediction:
         self.ebu_ratio = config['ebu_ratio']
         self.task_noise_std = torch.from_numpy(np.array(config['noise_std'])).to(device)
 
-        # self.sample_dist_index = np.fromfunction(lambda i: ((i + 1) * (i + 2) * (2 * i + 3)) // 6, (self.buffer_size,),
-        #                                          dtype=int)
         self.uniform_sampler = uniform_sampler
         self.initialize(self.uniform_sampler)
 
@@ -173,10 +123,6 @@ class LatentSpacePrediction:
         else:
             self.current_tasks = [self._sample_gaussian(self.init_mean, self.init_std) for i in
                                   range(self.buffer_size)]
-
-        # self.current_tasks[:index] = init_dist(index)
-        # self.random_tasks = self.random_sample(self.buffer_size)
-        # self.ls_tasks = self.random_tasks
 
     def sample(self, buffer=None):
         if buffer is None:
@@ -210,8 +156,11 @@ class LatentSpacePrediction:
 
         return context
 
-    def update(self, env, policy, encoder, task_decoder):
+    def update(self, env, policy, vae):
         print('updating task dist...')
+        encoder = vae.transition_encoder
+        task_decoder = vae.task_decoder
+
         task_latent = []
         task_returns = []
 
@@ -220,23 +169,25 @@ class LatentSpacePrediction:
         # current_tasks = [[int(round(task[0])), int(round(task[1]))] for task in current_tasks]
         sampled_tasks = []
 
-        for i in range(self.buffer_size):
-            task = self.sample()
-            # env.unwrapped.env.context = task
-            episode_latent_means, episode_latent_logvars, episode_prev_obs, episode_next_obs, episode_actions, \
-                episode_rewards, episode_returns = sample_trajectory(env, policy, encoder, task)
+        #  additional sample version
+        # for i in range(self.buffer_size):
+        #     task = self.sample()
+        #     # env.unwrapped.env.context = task
+        #     episode_latent_means, episode_latent_logvars, episode_prev_obs, episode_next_obs, episode_actions, \
+        #         episode_rewards, episode_returns = sample_trajectory(env, policy, encoder, task)
+        #
+        #     task_means, task_logvars = trajectory_embedding(episode_latent_means, episode_latent_logvars)
+        #     # task_latent.append(self._sample_gaussian(task_means, task_logvars))
+        #     task_latent.append(task_means)
+        #     task_returns.append(episode_returns)
+        #     sampled_tasks.append(torch.from_numpy(np.array(task)).float())
 
-            task_means, task_logvars = trajectory_embedding(episode_latent_means, episode_latent_logvars)
-            # task_latent.append(self._sample_gaussian(task_means, task_logvars))
-            task_latent.append(task_means)
-            task_returns.append(episode_returns)
-            sampled_tasks.append(torch.from_numpy(np.array(task)).float())
+        task_latent, task_returns = self.latent_map(vae.rollout_storage, encoder)
 
-        # target task embedding
-        # env.unwrapped.env.context = self.target
-        target_episode_latent_means, target_episode_latent_logvars, episode_prev_obs, episode_next_obs, episode_actions, \
-            episode_rewards, episode_returns = sample_trajectory(env, policy, encoder, self.target)
-
+        # sample target task embedding
+        target_episode_latent_means, target_episode_latent_logvars, _, _, _, _, _ = sample_trajectory(env, policy,
+                                                                                                      encoder,
+                                                                                                      self.target)
         target_means, target_logvars = trajectory_embedding(target_episode_latent_means,
                                                             target_episode_latent_logvars)
         # target_latent = self._sample_gaussian(target_means, target_logvars)
@@ -280,33 +231,40 @@ class LatentSpacePrediction:
             self.current_tasks[update_index:] = self.uniform_sampler(size=self.buffer_size - update_index)
             # self.current_tasks[-16:] = torch.from_numpy(np.array(self.target)).float().to(device)
 
-            # if self.config['enable_latent_selection_sample']:
-            if self.ebu_ratio > 0:
-                sampled_tasks = torch.stack(sampled_tasks)
-                sampled_tasks = sampled_tasks[index]
-                # print(f'sampled_tasks shape: {sampled_tasks.shape[0]}')
-                # max_x = index.shape[0]
-                # print(max_x)
-                ls_buffer_size = min(int((self.buffer_size - update_index) * self.ebu_ratio), index.shape[0])
-                # if ls_buffer_size > 0:
-                ls_task = []
-                for i in range(index.shape[0]):
-                    # random_x = np.random.randint(max_x)
-                    # s_i = np.searchsorted(self.sample_dist_index, random_x, 'right')
-                    s_i = min(int(np.random.exponential(1.0)), index.shape[0])
-                    # print(sampled_tasks[latent_index[s_i]])
-                    ls_task.append(
-                        sampled_tasks[latent_index[s_i]] + self.task_noise_std * torch.randn(
-                            self.config['context_dim']))
-
-                ls_task = torch.stack(ls_task)
-                # print(ls_task)
-                self.current_tasks[-ls_buffer_size:] = ls_task[:ls_buffer_size]
-                self.ls_tasks = ls_task
+            self.EBU_update(sampled_tasks, index, update_index, latent_index)
 
         self.curriculum_index += 1
         # print(self.current_tasks.view(-1, self.current_tasks.shape[0] // 16,
         #                               self.current_tasks.shape[-1]).cpu().detach().numpy())
+
+    def EBU_update(self, sampled_tasks, index, update_index, latent_index):
+        # if self.config['enable_latent_selection_sample']:
+        if self.ebu_ratio > 0:
+            sampled_tasks = torch.stack(sampled_tasks)
+            sampled_tasks = sampled_tasks[index]
+            # print(f'sampled_tasks shape: {sampled_tasks.shape[0]}')
+            # max_x = index.shape[0]
+            # print(max_x)
+            ls_buffer_size = min(int((self.buffer_size - update_index) * self.ebu_ratio), index.shape[0])
+            # if ls_buffer_size > 0:
+            ls_task = []
+            for i in range(index.shape[0]):
+                # random_x = np.random.randint(max_x)
+                # s_i = np.searchsorted(self.sample_dist_index, random_x, 'right')
+                s_i = min(int(np.random.exponential(1.0)), index.shape[0])
+                # print(sampled_tasks[latent_index[s_i]])
+                ls_task.append(
+                    sampled_tasks[latent_index[s_i]] + self.task_noise_std * torch.randn(
+                        self.config['context_dim']))
+
+            ls_task = torch.stack(ls_task)
+            # print(ls_task)
+            self.current_tasks[-ls_buffer_size:] = ls_task[:ls_buffer_size]
+            self.ls_tasks = ls_task
+
+    def latent_map(self, buffer, encoder):
+        latent_means, latent_logvars = get_latent_map(buffer, encoder)
+        return latent_means, buffer.episode_return
 
     def _sample_gaussian(self, mu, std, num=None):
         if num is None:

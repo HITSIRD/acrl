@@ -3,6 +3,7 @@ import torch
 from torch import nn
 from acrl.util.device import device
 
+
 class FeatureExtractor(nn.Module):
     """ Used for extrating features for states/actions/rewards """
 
@@ -67,13 +68,7 @@ def sample_trajectory(env, policy, encoder, task):
     for step_idx in range(0, max_steps):
         episode_prev_obs.append(prev_state_wo_context)
         with torch.no_grad():
-            # latent = utl.get_latent_for_policy(args,
-            #                                    latent_sample=curr_latent_sample,
-            #                                    latent_mean=curr_latent_mean,
-            #                                    latent_logvar=curr_latent_logvar)
-
             action, _, _ = policy(prev_state)
-            # _, action = policy.act(state=None, pos=info['pos'], dir=info['dir'], task=info['task'])
         # action = action.view((1, *action.shape))
         action = action.squeeze(0).cpu()
 
@@ -109,5 +104,29 @@ def sample_trajectory(env, policy, encoder, task):
 
     return episode_latent_means, episode_latent_logvars, episode_prev_obs, episode_next_obs, episode_actions, episode_rewards, episode_returns
 
-def make_without_context_obs(obs):
-    return
+
+def get_latent_map(buffer, encoder):
+    episode_latent_samples = []
+    latent_means = []
+    latent_logvars = []
+
+    for i in range(buffer.max_buffer_size):
+        episode_latent_means = []
+        episode_latent_logvars = []
+        for j in range(buffer.trajectory_lens[i]):
+            curr_latent_sample, curr_latent_mean, curr_latent_logvar = encoder(
+                prev_states=buffer.prev_state[i][j].to(device),
+                actions=buffer.action[i][j].to(device),
+                rewards=buffer.reward[i][j].to(device),
+                next_states=buffer.next_state[i][j].to(device),
+                tasks=buffer.task[i].to(device))
+
+            episode_latent_samples.append(curr_latent_sample.clone())
+            episode_latent_means.append(curr_latent_mean.clone())
+            episode_latent_logvars.append(curr_latent_logvar.clone())
+
+        mean, logvar = trajectory_embedding(episode_latent_means, episode_latent_logvars)
+        latent_means.append(mean)
+        latent_logvars.append(logvar)
+
+    return latent_means, latent_logvars

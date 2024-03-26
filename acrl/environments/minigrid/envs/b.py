@@ -6,10 +6,10 @@ import torch
 from matplotlib.colors import Normalize, ListedColormap
 
 # import utils.helpers
-from deep_sprl.environments.minigrid.core.grid import Grid
-from deep_sprl.environments.minigrid.core.mission import MissionSpace
-from deep_sprl.environments.minigrid.core.world_object import Door, Goal, Wall, Lava, Key
-from deep_sprl.environments.minigrid.minigrid_env import MiniGridEnv
+from acrl.environments.minigrid.core.grid import Grid
+from acrl.environments.minigrid.core.mission import MissionSpace
+from acrl.environments.minigrid.core.world_object import Door, Goal, Wall, Lava, Key
+from acrl.environments.minigrid.minigrid_env import MiniGridEnv
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -264,7 +264,7 @@ class BEnv(MiniGridEnv):
                             task_decoder=None,
                             image_folder=None):
         # fig, (ax1) = plt.subplots(1, 1, figsize=(12, 12))
-        from deep_sprl.teachers.acrl.util import sample_trajectory, trajectory_embedding
+        from acrl.teachers.acrl.util import sample_trajectory, trajectory_embedding
 
         cmap = plt.colormaps['spring']
 
@@ -527,7 +527,7 @@ class BEnv(MiniGridEnv):
     #                        encoder,
     #                        iter_idx,
     #                        image_folder=None):
-    #     from deep_sprl.teachers.acrl.util import sample_trajectory
+    #     from acrl.teachers.acrl.util import sample_trajectory
     #     env.reset()
     #
     #     N = 256

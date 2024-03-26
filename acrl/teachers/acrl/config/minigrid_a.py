@@ -19,7 +19,7 @@ config = {
     # general
     'lr_vae': 0.005,
     'lr_task_decoder': 0.005,
-    'size_vae_buffer': 2048,
+    # 'size_vae_buffer': 2048,
     'vae_buffer_add_thresh': 1,
     'vae_batch_num_trajectories': 16,
     'vae_avg_reconstruction_terms': False,
