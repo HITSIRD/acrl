@@ -28,8 +28,8 @@ class BaseWrapper(gym.Env):
     def __init__(self, env, teacher, discount_factor, context_visible, reward_from_info=False,
                  context_post_processing=None):
         gym.Env.__init__(self)
-        self.stats_buffer = Buffer(3, 10000, True)
-        self.context_trace_buffer = Buffer(3, 10000, True)
+        self.stats_buffer = Buffer(3, 1000, True)
+        self.context_trace_buffer = Buffer(3, 1000, True)
 
         self.env = env
         self.teacher = teacher

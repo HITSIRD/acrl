@@ -1,16 +1,13 @@
 import numpy as np
 from queue import Queue
 
-from acrl.environments.minigrid.envs import AEnv, BEnv, CEnv
 from acrl.teachers.abstract_teacher import AbstractTeacher
 from acrl.teachers.goal_gan.generator import StateGAN, StateCollection
-
-enable_minigrid_sampler = False
 
 class GoalGAN(AbstractTeacher):
 
     def __init__(self, mins, maxs, state_noise_level, success_distance_threshold, update_size, n_rollouts=2,
-                 goid_lb=0., goid_ub=0.5, p_old=0.2, pretrain_samples=None):
+                 goid_lb=0., goid_ub=0.5, p_old=0.2, pretrain_samples=None, post_sampler=None):
         self.gan = StateGAN(
             state_size=len(mins),
             evaluater_size=1,
@@ -43,13 +40,15 @@ class GoalGAN(AbstractTeacher):
         self.ready2save = False
         self.contexts2save = None
 
+        self.post_sampler = post_sampler
+
         if pretrain_samples is not None:
             self.gan.pretrain(pretrain_samples)
 
     def sample(self):
         sample = self._sample()
-        if enable_minigrid_sampler:
-            while not AEnv._is_feasible(sample):
+        if self.post_sampler is not None:
+            while not self.post_sampler(sample):
                 sample = self._sample()
         return sample
 

@@ -374,7 +374,7 @@ def wasserstein_plot(path=None):
 
 
 if __name__ == "__main__":
-    os.makedirs("figures", exist_ok=True)
-    kl_interpolation_plot1(path="figures/value_interpolation.pdf")
-    kl_interpolation_plot2(path="figures/kl_interpolation.pdf")
-    wasserstein_plot(path="figures/wasserstein_interpolation.pdf")
+    os.makedirs("../figures", exist_ok=True)
+    kl_interpolation_plot1(path="../figures/value_interpolation.pdf")
+    kl_interpolation_plot2(path="../figures/kl_interpolation.pdf")
+    wasserstein_plot(path="../figures/wasserstein_interpolation.pdf")

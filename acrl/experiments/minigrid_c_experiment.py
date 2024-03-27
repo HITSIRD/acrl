@@ -4,6 +4,7 @@ import torch
 import numpy as np
 from stable_baselines3.common.vec_env import DummyVecEnv
 
+from acrl.environments.minigrid.envs import CEnv
 from acrl.experiments.abstract_experiment import AbstractExperiment, Learner
 from acrl.teachers.goal_gan import GoalGAN, GoalGANWrapper
 from acrl.teachers.alp_gmm import ALPGMM, ALPGMMWrapper
@@ -80,7 +81,7 @@ class MinigridCExperiment(AbstractExperiment):
     GG_FIT_RATE = {Learner.PPO: 200, Learner.SAC: None}
     GG_P_OLD = {Learner.PPO: 0.2, Learner.SAC: None}
 
-    ACRL_LSP_RATIO = config['lsp_ratio']
+    ACRL_LAMBDA = config['lambda']
     ACRL_EBU_RATIO = config['ebu_ratio']
 
     def __init__(self, base_log_dir, curriculum_name, learner_name, parameters, seed):
@@ -90,6 +91,12 @@ class MinigridCExperiment(AbstractExperiment):
 
     def create_environment(self, evaluation=False):
         env = gym.make('MiniGrid-C-v1')
+
+        config['action_dim'] = env.action_space.n
+        config['context_dim'] = self.INITIAL_MEAN.shape[0]
+        config['state_dim'] = env.observation_space.shape[0]
+        config['max_episode_len'] = env.max_steps
+
         if evaluation or self.curriculum.default():
             teacher = DistributionSampler(self.target_sampler, self.LOWER_CONTEXT_BOUNDS, self.UPPER_CONTEXT_BOUNDS)
             env = BaseWrapper(env, teacher, self.DISCOUNT_FACTOR, context_visible=True,
@@ -97,7 +104,7 @@ class MinigridCExperiment(AbstractExperiment):
         elif self.curriculum.alp_gmm():
             teacher = ALPGMM(self.LOWER_CONTEXT_BOUNDS.copy(), self.UPPER_CONTEXT_BOUNDS.copy(), seed=self.seed,
                              fit_rate=self.AG_FIT_RATE[self.learner], random_task_ratio=self.AG_P_RAND[self.learner],
-                             max_size=self.AG_MAX_SIZE[self.learner])
+                             max_size=self.AG_MAX_SIZE[self.learner], post_sampler=CEnv.is_feasible)
             env = ALPGMMWrapper(env, teacher, self.DISCOUNT_FACTOR, context_visible=True,
                                 context_post_processing=context_post_processing)
         elif self.curriculum.goal_gan():
@@ -105,7 +112,8 @@ class MinigridCExperiment(AbstractExperiment):
             teacher = GoalGAN(self.LOWER_CONTEXT_BOUNDS.copy(), self.UPPER_CONTEXT_BOUNDS.copy(),
                               state_noise_level=self.GG_NOISE_LEVEL[self.learner], success_distance_threshold=0.01,
                               update_size=self.GG_FIT_RATE[self.learner], n_rollouts=2, goid_lb=0.25, goid_ub=0.75,
-                              p_old=self.GG_P_OLD[self.learner], pretrain_samples=samples)
+                              p_old=self.GG_P_OLD[self.learner], pretrain_samples=samples,
+                              post_sampler=CEnv.is_feasible)
             env = GoalGANWrapper(env, teacher, self.DISCOUNT_FACTOR, context_visible=True,
                                  context_post_processing=context_post_processing)
         elif self.curriculum.self_paced() or self.curriculum.wasserstein():
@@ -121,27 +129,24 @@ class MinigridCExperiment(AbstractExperiment):
                                                                 [bins, bins]))
         elif self.curriculum.plr():
             teacher = PLR(self.LOWER_CONTEXT_BOUNDS, self.UPPER_CONTEXT_BOUNDS, self.PLR_REPLAY_RATE,
-                          self.PLR_BUFFER_SIZE, self.PLR_BETA, self.PLR_RHO)
+                          self.PLR_BUFFER_SIZE, self.PLR_BETA, self.PLR_RHO, post_sampler=CEnv.is_feasible)
             env = PLRWrapper(env, teacher, self.DISCOUNT_FACTOR, context_visible=True)
         elif self.curriculum.vds():
             teacher = VDS(self.LOWER_CONTEXT_BOUNDS, self.UPPER_CONTEXT_BOUNDS, self.DISCOUNT_FACTOR, self.VDS_NQ,
                           q_train_config={"replay_size": 5 * self.STEPS_PER_ITER, "lr": self.VDS_LR,
                                           "n_epochs": self.VDS_EPOCHS, "batches_per_epoch": self.VDS_BATCHES,
-                                          "steps_per_update": self.STEPS_PER_ITER})
+                                          "steps_per_update": self.STEPS_PER_ITER}, post_sampler=CEnv.is_feasible)
             env = VDSWrapper(env, teacher, self.DISCOUNT_FACTOR, context_visible=True,
                              context_post_processing=context_post_processing)
         elif self.curriculum.acrl():
-            config['action_dim'] = 1
-            config['context_dim'] = self.TARGET_MEANS.shape[0]
-            # config['state_dim'] = env.observation_space.shape + self.TARGET_MEANS.shape[0]
-            config['state_dim'] = 151
-            config['max_episode_len'] = env.max_steps
             teacher = ACRL(self.TARGET_MEANS.copy(), self.INITIAL_MEAN.copy(), self.INITIAL_VARIANCE.copy(),
-                           self.LOWER_CONTEXT_BOUNDS, self.UPPER_CONTEXT_BOUNDS, config, self.get_log_dir())
+                           self.LOWER_CONTEXT_BOUNDS, self.UPPER_CONTEXT_BOUNDS, config, self.get_log_dir(),
+                           post_sampler=CEnv.is_feasible)
             env = ACRLWrapper(env, teacher, self.DISCOUNT_FACTOR, episodes_per_update=self.EP_PER_UPDATE,
                               context_visible=True, context_post_processing=context_post_processing)
         elif self.curriculum.random():
-            teacher = MinigridSampler(self.LOWER_CONTEXT_BOUNDS, self.UPPER_CONTEXT_BOUNDS)
+            teacher = MinigridSampler(self.LOWER_CONTEXT_BOUNDS, self.UPPER_CONTEXT_BOUNDS,
+                                      post_sampler=CEnv.is_feasible)
             env = BaseWrapper(env, teacher, self.DISCOUNT_FACTOR, context_visible=True,
                               context_post_processing=context_post_processing)
         else:
@@ -157,7 +162,7 @@ class MinigridCExperiment(AbstractExperiment):
                              train_freq=5, target_entropy="auto"))
 
     def create_experiment(self):
-        timesteps = 200 * self.STEPS_PER_ITER
+        timesteps = 201 * self.STEPS_PER_ITER
 
         env, vec_env = self.create_environment(evaluation=False)
         model, interface = self.learner.create_learner(vec_env, self.create_learner_params())
@@ -199,7 +204,7 @@ class MinigridCExperiment(AbstractExperiment):
     def evaluate_learner(self, path):
         model_load_path = os.path.join(path, "model.zip")
         model = self.learner.load_for_evaluation(model_load_path, self.vec_eval_env)
-        for i in range(0, 100):
+        for i in range(0, 50):
             obs = self.vec_eval_env.reset()
             done = False
             while not done:

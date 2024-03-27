@@ -2,17 +2,14 @@ import math
 import torch
 import numpy as np
 
-from acrl.environments.minigrid.envs import AEnv, BEnv, CEnv
 from acrl.teachers.vds.replay_buffer import ReplayBuffer
 from acrl.teachers.abstract_teacher import AbstractTeacher, BaseWrapper
-from acrl.teachers.sampler import MinigridSampler
 
-enable_minigrid_sampler = False
 
 class VDS(AbstractTeacher):
 
     def __init__(self, context_lb, context_ub, gamma, n_q, n_samples=1000, net_arch=None, q_train_config=None,
-                 is_discrete=False):
+                 is_discrete=False, post_sampler=None):
         if net_arch is None:
             net_arch = {"layers": [128, 128, 128], "act_func": torch.nn.Tanh()}
         self.net_arch = net_arch
@@ -41,8 +38,7 @@ class VDS(AbstractTeacher):
         self.contexts = None
         self.likelihoods = None
 
-        self.minigrid_sampler = MinigridSampler(context_lb, context_ub)
-
+        self.post_sampler = post_sampler
 
     def initialize_teacher(self, env, learner, state_provider):
         obs_shape = env.observation_space.shape
@@ -81,11 +77,8 @@ class VDS(AbstractTeacher):
             if self.is_discrete:
                 self.contexts = np.arange(self.context_lb, self.context_ub)
             else:
-                if enable_minigrid_sampler:
-                    self.contexts = self.minigrid_sampler.sample(size=self.n_samples)
-                else:
-                    self.contexts = np.random.uniform(self.context_lb, self.context_ub,
-                                               size=(self.n_samples, len(self.context_lb)))
+                self.contexts = np.random.uniform(self.context_lb, self.context_ub,
+                                                  size=(self.n_samples, len(self.context_lb)))
 
             states = self.state_provider(self.contexts)
             actions = self.learner.get_action(states)
@@ -99,8 +92,8 @@ class VDS(AbstractTeacher):
 
     def sample(self):
         sample = self._sample()
-        if enable_minigrid_sampler:
-            while not AEnv._is_feasible(sample):
+        if self.post_sampler is not None:
+            while not self.post_sampler(sample):
                 sample = self._sample()
         return sample
 

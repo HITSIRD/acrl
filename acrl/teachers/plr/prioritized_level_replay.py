@@ -1,13 +1,12 @@
 import torch
 import numpy as np
 from acrl.teachers.abstract_teacher import AbstractTeacher, BaseWrapper
-from acrl.environments.minigrid.envs import AEnv, BEnv, CEnv
 
-enable_minigrid_sampler = False
 
 class PLR(AbstractTeacher):
 
-    def __init__(self, context_lb, context_ub, replay_rate, buffer_size, beta, rho, is_discrete=False):
+    def __init__(self, context_lb, context_ub, replay_rate, buffer_size, beta, rho, is_discrete=False,
+                 post_sampler=None):
         self.context_lb = context_lb
         self.context_ub = context_ub
         self.is_discrete = is_discrete
@@ -21,6 +20,7 @@ class PLR(AbstractTeacher):
         self.rho = rho
 
         self.sample_from_buffer = None
+        self.post_sampler = post_sampler
 
     def sample_uniform(self):
         if self.is_discrete:
@@ -123,9 +123,10 @@ class PLRWrapper(BaseWrapper):
 
     def reset(self):
         self.cur_context = self.teacher.sample()
-        if enable_minigrid_sampler:
-            while not AEnv._is_feasible(self.context_post_processing(self.cur_context)):
+        if self.teacher.post_sampler is not None:
+            while not self.teacher.post_sampler(self.context_post_processing(self.cur_context)):
                 self.cur_context = self.teacher.sample()
+
         if self.context_post_processing is None:
             self.processed_context = self.cur_context.copy()
         else:

@@ -106,7 +106,7 @@ class AEnv(MiniGridEnv):
         return self.task
 
     @staticmethod
-    def _is_feasible(context):
+    def is_feasible(context):
         # Check that the context is not in or beyond the outer wall
         # if context[0] > 5.5 and context[0] < 6.5:
         #     if context[1] < 7.5:
@@ -241,7 +241,7 @@ class AEnv(MiniGridEnv):
                             task_decoder=None,
                             image_folder=None):
         # fig, (ax1) = plt.subplots(1, 1, figsize=(12, 12))
-        from deep_sprl.teachers.acrl.util import sample_trajectory, trajectory_embedding
+        from acrl.teachers.acrl.util import sample_trajectory, trajectory_embedding
 
         cmap = plt.colormaps['spring']
 
@@ -311,6 +311,7 @@ class AEnv(MiniGridEnv):
             if episode_return < 0.3:
                 continue
             mean, logvars = trajectory_embedding(latent_means, latent_logvars)
+            # mean = latent_means[-1]
             mean = mean.cpu().detach().numpy()
             means.append(mean)
             selected_tasks.append(task)
@@ -516,7 +517,7 @@ class AEnv(MiniGridEnv):
                            encoder,
                            iter_idx,
                            image_folder=None):
-        from deep_sprl.teachers.acrl.util import sample_trajectory
+        from acrl.teachers.acrl.util import sample_trajectory
         env.reset()
 
         N = 256

@@ -4,7 +4,7 @@ import numpy as np
 from matplotlib import cm
 import matplotlib.pyplot as plt
 from acrl.experiments import PointMass2DExperiment, CurriculumType
-from misc.visualize_point_mass_results import currot_plot, sprl_plot
+from misc.plot_baselines.visualize_point_mass_results import currot_plot, sprl_plot
 
 sys.path.append(os.path.realpath(os.path.join(os.path.dirname(__file__), "../currot-icml")))
 
@@ -159,7 +159,7 @@ def context_space_image(path=None, sprl=False, base_log_dir="logs"):
 
 if __name__ == "__main__":
     base_log_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../currot-icml", "logs")
-    os.makedirs("figures", exist_ok=True)
-    context_space_image("figures/point_mass_env.pdf", sprl=False, base_log_dir=base_log_dir)
-    context_space_image("figures/point_mass_distribution_sprl.pdf", sprl=True, base_log_dir=base_log_dir)
-    plot_trajectories(1, path="figures/point_mass_trajectories", base_log_dir=base_log_dir)
+    os.makedirs("../figures", exist_ok=True)
+    context_space_image("../figures/point_mass_env.pdf", sprl=False, base_log_dir=base_log_dir)
+    context_space_image("../figures/point_mass_distribution_sprl.pdf", sprl=True, base_log_dir=base_log_dir)
+    plot_trajectories(1, path="../figures/point_mass_trajectories", base_log_dir=base_log_dir)

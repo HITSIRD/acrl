@@ -17,7 +17,8 @@ from acrl.environments.minigrid.minigrid_env import MiniGridEnv
 # else:
 #     device = torch.device('cpu')
 
-domain = [[1, 1], [1, 5], [2, 5], [3, 5], [4, 5], [5, 5], [5, 6], [5, 7], [5, 8], [5, 9], [5, 10], [8, 5], [9, 5], [10, 5]]
+domain = [[1, 1], [1, 5], [2, 5], [3, 5], [4, 5], [5, 5], [5, 6], [5, 7], [5, 8], [5, 9], [5, 10], [8, 5], [9, 5],
+          [10, 5]]
 key_domain = [[1, 6], [2, 6], [3, 6], [4, 6], [1, 7], [2, 7], [3, 7], [4, 7], [1, 8], [2, 8], [3, 8], [4, 8],
               [1, 9], [2, 9], [3, 9], [4, 9], [1, 10], [2, 10], [3, 10], [4, 10]]
 
@@ -85,8 +86,8 @@ class CEnv(MiniGridEnv):
         self.possible_goals = None
         # self.domain = [[1, 1], [5, 5], [5, 6], [5, 7], [5, 8], [6, 5], [7, 5], [8, 5], [1, 6], [1, 7], [1, 8], [2, 6],
         #                [2, 7], [2, 8], [5, 1], [6, 1], [7, 1], [5, 2], [6, 2], [7, 2]]
-        self.domain = [[1, 1], [1, 5], [2, 5], [3, 5], [4, 5], [5, 5], [5, 6], [5, 7], [5, 8], [5, 9], [7, 5], [8, 5], [9, 5], [10, 5]]
-
+        self.domain = [[1, 1], [1, 5], [2, 5], [3, 5], [4, 5], [5, 5], [5, 6], [5, 7], [5, 8], [5, 9], [7, 5], [8, 5],
+                       [9, 5], [10, 5]]
 
         self.step_count = 0
         mission_space = MissionSpace(mission_func=self._gen_mission)
@@ -105,7 +106,7 @@ class CEnv(MiniGridEnv):
         return self.task
 
     @staticmethod
-    def _is_feasible(context):
+    def is_feasible(context):
         # Check that the context is not in or beyond the outer wall
         # if context[0] > 5.5 and context[0] < 6.5:
         #     if context[1] < 7.5:
@@ -180,7 +181,6 @@ class CEnv(MiniGridEnv):
         self.grid.set(5, 7, Wall())
         self.grid.set(5, 8, Wall())
         self.grid.set(5, 9, Wall())
-
 
         # self.grid.set(7, 5, Lava())
         self.grid.set(8, 5, Lava())

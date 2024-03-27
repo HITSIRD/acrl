@@ -8,5 +8,5 @@ class GoalGANWrapper(BaseWrapper):
                              context_post_processing=context_post_processing)
 
     def done_callback(self, step, cur_initial_state, cur_context, discounted_reward, undiscounted_reward):
-        # self.teacher.update(cur_context, float(step[3]["success"]))
-            self.teacher.update(cur_context, float(1. if step[3] else 0.))
+        self.teacher.update(cur_context, float(step[3]["is_success"]))
+

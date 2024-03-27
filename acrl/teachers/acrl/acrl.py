@@ -15,7 +15,7 @@ from acrl.util.device import device
 
 class ACRL(AbstractTeacher):
 
-    def __init__(self, target, initial_mean, initial_std, context_lb, context_ub, config, log_dir):
+    def __init__(self, target, initial_mean, initial_std, context_lb, context_ub, config, log_dir, post_sampler=None):
 
         # Create an array if we use the same number of bins per dimension
         self.config = config
@@ -33,7 +33,7 @@ class ACRL(AbstractTeacher):
         self.vae = VAE(self.config)
         self.policy = None  # sample trajectory to train VAE
 
-        # self.sampler = UniformSampler(self.context_bounds)
+        self.post_sampler = post_sampler
 
     def initialize_context_buffer(self):
         self.teacher.initialize(self.uniform_sampler)
@@ -74,6 +74,14 @@ class ACRL(AbstractTeacher):
                 print('update distribution...')
 
     def sample(self):
+        task = self._sample()
+        if self.post_sampler is not None:
+            while not self.post_sampler(task):
+                task = self._sample()
+        else:
+            return task
+
+    def _sample(self):
         return self.teacher.sample()
 
     def save(self, path):
@@ -106,7 +114,7 @@ class LatentSpacePrediction:
         self.random_tasks = []
         self.ls_tasks = []
         self.buffer_size = config['task_buffer_size']
-        self.lsp_ratio = config['lsp_ratio']
+        self.update_lambda = config['lambda']
         self.ebu_ratio = config['ebu_ratio']
         self.task_noise_std = torch.from_numpy(np.array(config['noise_std'])).to(device)
 
@@ -116,7 +124,7 @@ class LatentSpacePrediction:
     def initialize(self, sampler):
         # init_dist = GaussianTorchDistribution(self.init_mean, self.init_std, use_cuda=False, dtype=torch.float64)
         self.current_tasks = sampler(size=self.buffer_size)
-        index = int(max(self.lsp_ratio, self.ebu_ratio) * self.buffer_size)
+        index = int(max(self.update_lambda, self.ebu_ratio) * self.buffer_size)
         if index > 0:
             self.current_tasks[:index] = torch.stack([self._sample_gaussian(self.init_mean, self.init_std) for i in
                                                       range(index)])
@@ -128,27 +136,8 @@ class LatentSpacePrediction:
         if buffer is None:
             buffer = self.current_tasks
 
-        #  minigrid sampler
-
-        # uniform = False
-        #
-        # count = 100
-        # while count > 0:
-        #     count -= 1
-        #     index = np.random.randint(len(buffer))
-        #     if AEnv._is_feasible(self.current_tasks[index]):
-        #         break
-        #     if count == 0:
-        #         uniform = True
-        # # return self.current_tasks[index] if np.random.random() > 0.05 else self.target
-        # if not uniform:
-        #     context = self.current_tasks[index] if np.random.random() > 0.05 else self.target
-        # else:
-        #     context = self.uniform_sampler()
-        # context = self.current_tasks[index]
-
-        # context = self.current_tasks[np.random.randint(len(buffer))] if np.random.random() > 0.05 else self.target
-        context = self.current_tasks[np.random.randint(len(buffer))]
+        context = self.current_tasks[np.random.randint(len(buffer))] if np.random.random() > 0.05 else self.target
+        # context = self.current_tasks[np.random.randint(len(buffer))]
 
         if isinstance(context, torch.Tensor):
             context = context.numpy()
@@ -160,27 +149,7 @@ class LatentSpacePrediction:
         print('updating task dist...')
         encoder = vae.transition_encoder
         task_decoder = vae.task_decoder
-
-        task_latent = []
-        task_returns = []
-
-        # index = np.random.choice(range(np.min(self.current_tasks.shape[0], 32)), replace=False)
-        # current_tasks = self.current_tasks.cpu().detach().numpy().tolist()
-        # current_tasks = [[int(round(task[0])), int(round(task[1]))] for task in current_tasks]
         sampled_tasks = []
-
-        #  additional sample version
-        # for i in range(self.buffer_size):
-        #     task = self.sample()
-        #     # env.unwrapped.env.context = task
-        #     episode_latent_means, episode_latent_logvars, episode_prev_obs, episode_next_obs, episode_actions, \
-        #         episode_rewards, episode_returns = sample_trajectory(env, policy, encoder, task)
-        #
-        #     task_means, task_logvars = trajectory_embedding(episode_latent_means, episode_latent_logvars)
-        #     # task_latent.append(self._sample_gaussian(task_means, task_logvars))
-        #     task_latent.append(task_means)
-        #     task_returns.append(episode_returns)
-        #     sampled_tasks.append(torch.from_numpy(np.array(task)).float())
 
         task_latent, task_returns = self.latent_map(vae.rollout_storage, encoder)
 
@@ -221,11 +190,11 @@ class LatentSpacePrediction:
             raise NotImplementedError
 
         if updated_tasks.shape[0] > self.buffer_size:
-            update_index = int(self.buffer_size * self.lsp_ratio)
+            update_index = int(self.buffer_size * self.update_lambda)
             self.current_tasks = updated_tasks[:update_index]
             self.current_tasks[update_index:] = self.uniform_sampler(size=self.buffer_size - update_index)
         else:
-            update_index = int(min(updated_tasks.shape[0], self.buffer_size * self.lsp_ratio))
+            update_index = int(min(updated_tasks.shape[0], self.buffer_size * self.update_lambda))
             # if update_index > 0:
             self.current_tasks[:update_index] = updated_tasks[:update_index].cpu().detach().numpy()
             self.current_tasks[update_index:] = self.uniform_sampler(size=self.buffer_size - update_index)

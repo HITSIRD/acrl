@@ -6,7 +6,7 @@ config = {
     'return_delta': -70,  # select traj sample which return is greater than return_delta
     'update_delta': -60,  # if mean of return > update_delta, then update context dist
     'task_buffer_size': 50,
-    'lsp_ratio': 0.25,  # LSP ratio
+    'lambda': 0.25,  # LSP ratio
     'ebu_ratio': 0,  # EBU ratio
     'noise_std': [0.5, 0.5],
     'add_noise': True,

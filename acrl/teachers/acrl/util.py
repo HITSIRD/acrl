@@ -73,7 +73,8 @@ def sample_trajectory(env, policy, encoder, task):
         action = action.squeeze(0).cpu()
 
         # observe reward and next obs
-        next_state_wo_context, next_state, rew_raw, done, info = env.step(action, update=False, with_context=True)
+        next_state_wo_context, next_state, rew_raw, done, info = env.step(action, update=False, with_context=True,
+                                                                          insert=False)
 
         next_state = torch.from_numpy(next_state).unsqueeze(0).to(device)
         next_state_wo_context = torch.from_numpy(next_state_wo_context).to(device)

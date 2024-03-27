@@ -2,12 +2,8 @@ from sklearn.mixture import GaussianMixture as GMM
 import numpy as np
 from gym.spaces import Box
 
-from acrl.environments.minigrid.envs import AEnv, BEnv, CEnv
 from acrl.teachers.alp_gmm.dataset import BufferedDataset
 from acrl.teachers.abstract_teacher import AbstractTeacher
-from acrl.teachers.sampler import MinigridSampler
-
-enable_minigrid_sampler = False
 
 
 def proportional_choice(v, eps=0.):
@@ -47,7 +43,8 @@ class EmpiricalALPComputer:
 # Absolute Learning Progress - Gaussian Mixture Model
 # mins / maxs are vectors defining task space boundaries (ex: mins=[0,0,0] maxs=[1,1,1])
 class ALPGMM(AbstractTeacher):
-    def __init__(self, mins, maxs, fit_rate=250, random_task_ratio=0.2, max_size=None, seed=None, params=dict()):
+    def __init__(self, mins, maxs, fit_rate=250, random_task_ratio=0.2, max_size=None, seed=None, post_sampler=None,
+                 params=dict()):
         self.seed = seed
         if not seed:
             self.seed = np.random.randint(42, 424242)
@@ -90,7 +87,7 @@ class ALPGMM(AbstractTeacher):
         # Boring book-keeping
         self.bk = {'weights': [], 'covariances': [], 'means': [], 'tasks_alps': [], 'episodes': []}
 
-        self.minigrid_sampler = MinigridSampler(mins, maxs)
+        self.post_sampler = post_sampler
 
     def init_gmm(self, nb_gaussians):
         return GMM(n_components=nb_gaussians, covariance_type='full', random_state=self.seed,
@@ -150,15 +147,14 @@ class ALPGMM(AbstractTeacher):
         if (len(self.tasks) < self.nb_random) or (np.random.random() < self.random_task_ratio):
             # Random task sampling
             new_task = self.random_task_generator.sample()
-            # new_task = self.minigrid_sampler.sample()
         else:
             # ALP-based task sampling
 
             # 1 - Retrieve the mean ALP value of each Gaussian in the GMM
             new_task = self._sample()
 
-            if enable_minigrid_sampler:
-                while not AEnv._is_feasible(new_task):
+            if self.post_sampler is not None:
+                while not self.post_sampler(new_task):
                     new_task = self._sample()
 
         return new_task

@@ -2,6 +2,7 @@ import os
 import gym
 import torch
 import numpy as np
+from stable_baselines3.common.noise import NormalActionNoise
 from stable_baselines3.common.vec_env import DummyVecEnv
 
 from acrl.experiments.abstract_experiment import AbstractExperiment, Learner
@@ -62,7 +63,7 @@ class AntMazeExperiment(AbstractExperiment):
     METRIC_EPS = 1.0
     EP_PER_UPDATE = 40
 
-    STEPS_PER_ITER = 10000
+    STEPS_PER_ITER = 50000
     DISCOUNT_FACTOR = 0.99
     LAM = 0.99
 
@@ -88,8 +89,9 @@ class AntMazeExperiment(AbstractExperiment):
     GG_FIT_RATE = {Learner.PPO: 200, Learner.SAC: None}
     GG_P_OLD = {Learner.PPO: 0.2, Learner.SAC: None}
 
-    ACRL_LSP_RATIO = config['lsp_ratio']
-    ACRL_EBU_RATIO = config['ebu_ratio']
+    ACRL_LAMBDA = config['lambda']
+
+    # ACRL_EBU_RATIO = config['ebu_ratio']
 
     def __init__(self, base_log_dir, curriculum_name, learner_name, parameters, seed):
         super().__init__(base_log_dir, curriculum_name, learner_name, parameters, seed)
@@ -142,7 +144,6 @@ class AntMazeExperiment(AbstractExperiment):
             config['action_dim'] = env.action_space.shape[0]
             config['context_dim'] = self.INITIAL_MEAN.shape[0]
             config['state_dim'] = env.observation_space.shape[0]
-            # print(config['state_dim'])
             config['max_episode_len'] = env.env.spec.max_episode_steps
             teacher = ACRL(self.TARGET_MEANS.copy(), self.INITIAL_MEAN.copy(), self.INITIAL_VARIANCE.copy(),
                            self.LOWER_CONTEXT_BOUNDS, self.UPPER_CONTEXT_BOUNDS, config, self.get_log_dir())
@@ -162,7 +163,9 @@ class AntMazeExperiment(AbstractExperiment):
                                 policy_kwargs=dict(net_arch=[128, 128, 128], activation_fn=torch.nn.Tanh)),
                     ppo=dict(n_steps=self.STEPS_PER_ITER, gae_lambda=self.LAM, batch_size=128),
                     sac=dict(learning_rate=3e-4, buffer_size=10000, learning_starts=500, batch_size=64,
-                             train_freq=5, target_entropy="auto"))
+                             train_freq=5, target_entropy="auto"),
+                    td3=dict(batch_size=128, action_noise=NormalActionNoise(mean=np.array([0]), sigma=np.array([0.05])),
+                             target_policy_noise=0.1))
 
     def create_experiment(self):
         timesteps = 201 * self.STEPS_PER_ITER
@@ -213,5 +216,4 @@ class AntMazeExperiment(AbstractExperiment):
             while not done:
                 action = model.step(obs, state=None, deterministic=False)
                 obs, rewards, done, infos = self.vec_eval_env.step(action)
-
         return self.eval_env.get_statistics()[0]

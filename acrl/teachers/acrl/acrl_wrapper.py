@@ -44,12 +44,14 @@ class ACRLWrapper(BaseWrapper):
         else:
             return obs, obs_wo_context
 
-    def step(self, action, update=True, with_context=False):
+    def step(self, action, update=True, with_context=False, insert=True):
         step = self.env.step(action)
         current_step = step[0], action, step[1], self.last_obs_wo_context, self.cur_context
+        done = step[2]
+
         self.last_obs_wo_context = step[0].copy()
 
-            # step = np.concatenate((step[0], self.env.unwrapped.context)), step[1], step[2], step[3]
+        # step = np.concatenate((step[0], self.env.unwrapped.context)), step[1], step[2], step[3]
         if with_context:
             step = step[0], np.concatenate((step[0], self.env.context)), step[1], step[2], step[3]
         else:
@@ -57,8 +59,10 @@ class ACRLWrapper(BaseWrapper):
         self.last_obs = step[0].copy()
 
         # insert VAE buffer
-        self.teacher.vae.rollout_storage.insert(step=current_step, done=step[2])
+        if insert:
+            self.teacher.vae.rollout_storage.insert(step=current_step, done=done)
         if update:
+            assert with_context is False
             self.update(step)
         return step
 

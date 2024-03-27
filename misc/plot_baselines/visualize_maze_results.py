@@ -373,10 +373,10 @@ def g_variance_plot(ax=None, path=None, base_log_dir="logs"):
 
 
 if __name__ == "__main__":
-    os.makedirs("figures", exist_ok=True)
+    os.makedirs("../../figures", exist_ok=True)
     # base_log_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "logs")
     base_log_dir = "/Users/wenyongyan/Documents/文稿 - 闻永言的MacBook Pro/Documents/Research/Projects/currot-icml/logs"
-    full_plot(path="figures/maze_precision+performance.pdf", base_log_dir=base_log_dir)
+    full_plot(path="../../figures/maze_precision+performance.pdf", base_log_dir=base_log_dir)
     wb_distribution_visualization(1, [10, 60, 110, 300], path="figures/maze_distribution.pdf",
                                   base_log_dir=base_log_dir)
     g_variance_plot(path="figures/maze_sprl_variances.pdf", base_log_dir=base_log_dir)

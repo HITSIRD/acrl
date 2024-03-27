@@ -87,8 +87,7 @@ class UMazeExperiment(AbstractExperiment):
     GG_FIT_RATE = {Learner.PPO: 200, Learner.SAC: None}
     GG_P_OLD = {Learner.PPO: 0.2, Learner.SAC: None}
 
-    ACRL_LSP = config['lsp_ratio']
-    ACRL_EBU = config['ebu_ratio']
+    ACRL_LAMBDA = config['lambda']
 
     def __init__(self, base_log_dir, curriculum_name, learner_name, parameters, seed):
         super().__init__(base_log_dir, curriculum_name, learner_name, parameters, seed)

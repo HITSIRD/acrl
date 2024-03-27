@@ -5,7 +5,7 @@ import numpy as np
 from matplotlib import cm
 from misc.util import add_plot
 import matplotlib.pyplot as plt
-from acrl.experiments import MinigridCExperiment
+from acrl.experiments import MinigridBExperiment
 
 plt.rc('text.latex', preamble=r'\usepackage{amsmath}'
                               r'\newcommand{\currot}{\textsc{currot}}'
@@ -21,9 +21,9 @@ plt.rcParams.update({
     "font.family": "serif"
 })
 
+
 FONT_SIZE = 8
 TICK_SIZE = 6
-
 
 def add_precision_plot(log_dir, ax, color):
     xs = []
@@ -85,7 +85,7 @@ def precision_comparison(ax=None, path=None, base_log_dir="logs"):
     for method, color in zip(["self_paced", "random", "wasserstein", "goal_gan", "alp_gmm",
                               "acl", "plr", "vds"],
                              ["C0", "C2", "C4", "C5", "C6", "C7", "C8", "C9"]):
-        exp = MinigridCExperiment(base_log_dir, method, "ppo", {}, seed=0)
+        exp = MinigridExperiment(base_log_dir, method, "ppo", {}, seed=0)
         log_dir = os.path.dirname(exp.get_log_dir())
 
         try:
@@ -129,8 +129,7 @@ def full_plot(path=None, base_log_dir="logs"):
     precision_comparison(ax2, base_log_dir=base_log_dir)
 
     f.legend(lines,
-             [r"\sprl", "Random", "Oracle", r"\currot \tiny{(Ours)}", r"\goalgan", r"\alpgmm", r"\acl", r"\plr",
-              r"\vds"],
+             [r"\sprl", "Random", "Oracle", r"\currot \tiny{(Ours)}", r"\goalgan", r"\alpgmm", r"\acl", r"\plr", r"\vds"],
              fontsize=FONT_SIZE, loc='upper left', bbox_to_anchor=(-0.01, 1.03), ncol=9, columnspacing=0.4,
              handlelength=0.9, handletextpad=0.25)
 
@@ -154,26 +153,25 @@ def performance_plot(ax=None, path=None, base_log_dir="logs"):
     for method, color in zip(["self_paced", "random", "default", "wasserstein", "goal_gan", "alp_gmm",
                               "acl", "plr", "vds", "acrl"],
                              ["C0", "C2", (0.2, 0.2, 0.2), "C4", "C5", "C6", "C7", "C8", "C9", "C10"]):
-        exp = MinigridCExperiment(base_log_dir, method, "ppo", {}, seed=1)
+        exp = MinigridBExperiment(base_log_dir, method, "ppo", {}, seed=1)
         log_dir = os.path.dirname(exp.get_log_dir())
         lines.append(add_plot(log_dir, ax, color))
 
     ax.set_ylabel(r"Episodic Return", fontsize=FONT_SIZE, labelpad=2.)
-    ax.set_xlabel(r"Train Steps (K)", fontsize=FONT_SIZE, labelpad=2.)
+    ax.set_xlabel(r"Train Steps ($\times 10^3$)", fontsize=FONT_SIZE, labelpad=2.)
 
     if show:
         f.legend(lines,
-                 [r"\sprl", "Random", "Oracle", r"\currot", r"\goalgan", r"\alpgmm", r"\acl", r"\plr", r"\vds", "acrl"],
+                 [r"\sprl", "Random", "Default", r"\currot", r"\goalgan", r"\alpgmm", r"\acl", r"\plr", r"\vds", "acrl"],
                  fontsize=FONT_SIZE, loc='upper left', bbox_to_anchor=(0.02, 1.01), ncol=4, columnspacing=0.4,
                  handlelength=0.9, handletextpad=0.25)
-
-    ax.set_xticks([0, 100, 200, 300, 400, 500])
+    ax.set_xticks([0, 40, 80, 120, 160, 200])
     ax.set_xticklabels([r"$0$", r"$100$", r"$200$", r"$300$", r"$400$", r"500"])
-    ax.set_xlim([0, 500])
+    ax.set_xlim([0, 200])
 
     # ax.set_yticks([-1, -0.5, 0, 0.5, 1.0])
     # ax.set_yticklabels([r"$-1$", r"$-0.5$", r"$0$", r"$0.5$", r"$1$"])
-    ax.set_ylim([-0.1, 1.6])
+    ax.set_ylim([-0.1, 1.25])
     ax.grid()
 
     ax.tick_params(axis='both', which='major', labelsize=TICK_SIZE)
@@ -190,7 +188,7 @@ def performance_plot(ax=None, path=None, base_log_dir="logs"):
 
 
 if __name__ == "__main__":
-    os.makedirs("figures", exist_ok=True)
+    os.makedirs("../../figures", exist_ok=True)
     # base_log_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "logs")
     base_log_dir = "/home/wenyongyan/文档/currot-icml_副本/logs"
-    performance_plot(path="figures/minigrid_c_performance.pdf", base_log_dir=base_log_dir)
+    performance_plot(path="../../figures/minigrid_b_performance.pdf", base_log_dir=base_log_dir)

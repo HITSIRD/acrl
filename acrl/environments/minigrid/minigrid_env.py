@@ -538,6 +538,7 @@ class MiniGridEnv(gym.Env):
     def step(self, action):
         self.step_count += 1
         reward = 0
+        success = False
 
         # reward = -0.02
         terminated = False
@@ -567,6 +568,7 @@ class MiniGridEnv(gym.Env):
             #     reward = -0.001
             if fwd_cell is not None and fwd_cell.type == "goal":
                 terminated = True
+                success = True
                 reward = self._reward()
                 # reward = 1
             elif fwd_cell is not None and fwd_cell.type == "lava":
@@ -612,9 +614,9 @@ class MiniGridEnv(gym.Env):
         else:
             raise ValueError(f"Unknown action: {action}")
 
-        if self.agent_pos == self.goal and self.step_count == 1:
-            terminated = True
-            reward = -1.0
+        # if self.agent_pos == self.goal and self.step_count == 1:
+        #     terminated = True
+        #     reward = -1.0
 
         if self.step_count >= self.max_steps:
             truncated = True
@@ -624,7 +626,7 @@ class MiniGridEnv(gym.Env):
 
         obs = self.gen_obs()
 
-        return obs, reward, terminated | truncated, {'pos': self.agent_pos, 'dir': self.agent_dir, 'task': self.task}
+        return obs, reward, terminated | truncated, {'is_success': success, 'pos': self.agent_pos, 'dir': self.agent_dir, 'task': self.task}
 
     def gen_obs_grid(self, agent_view_size=None):
         """

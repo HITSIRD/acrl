@@ -11,9 +11,11 @@ from acrl.teachers.spl import SelfPacedTeacherV2
 
 from stable_baselines3.sac import SAC
 from stable_baselines3.ppo import PPO
+from stable_baselines3.td3 import TD3
 from stable_baselines3.common.vec_env import VecEnv, DummyVecEnv
 from stable_baselines3.ppo.policies import MlpPolicy as PPOMlpPolicy
 from stable_baselines3.sac.policies import MlpPolicy as SACMlpPolicy
+from stable_baselines3.td3.policies import MlpPolicy as TD3MlpPolicy
 
 from acrl.util.device import device
 
@@ -154,6 +156,27 @@ class SACInterface(AgentInterface):
             return np.nan
 
 
+class TD3Interface(AgentInterface):
+
+    def __init__(self, learner, obs_dim):
+        super().__init__(learner, obs_dim)
+
+    def estimate_value_internal(self, inputs):
+        return np.squeeze(self.learner.sess.run([self.learner.step_ops[6]], {self.learner.observations_ph: inputs}))
+
+    def get_action(self, observations):
+        flat_obs = np.reshape(observations, (-1, observations.shape[-1]))
+        flat_acts = self.learner.predict(flat_obs, deterministic=False)[0]
+        acts = np.reshape(flat_acts, (observations.shape[0:-1]) + (-1,))
+        return acts
+
+    def mean_policy_std(self, cb_args, cb_kwargs):
+        if "infos_values" in cb_args[0] and len(cb_args[0]["infos_values"]) > 0:
+            return cb_args[0]["infos_values"][4]
+        else:
+            return np.nan
+
+
 class PPOInterface(AgentInterface):
 
     def __init__(self, learner, obs_dim):
@@ -161,7 +184,8 @@ class PPOInterface(AgentInterface):
         self.grad_fn = []
 
     def estimate_value_internal(self, inputs):
-        return np.squeeze(self.learner.policy.predict_values(torch.from_numpy(inputs).to(device)).cpu().detach().numpy())
+        return np.squeeze(
+            self.learner.policy.predict_values(torch.from_numpy(inputs).to(device)).cpu().detach().numpy())
 
     def get_action(self, observations):
         flat_obs = np.reshape(observations, (-1, observations.shape[-1]))
@@ -177,6 +201,15 @@ class PPOInterface(AgentInterface):
 
 
 class SACEvalWrapper:
+
+    def __init__(self, model):
+        self.model = model
+
+    def step(self, observation, state=None, deterministic=False):
+        return self.model.predict(observation, state=state, deterministic=deterministic)[0]
+
+
+class TD3EvalWrapper:
 
     def __init__(self, model):
         self.model = model
@@ -201,18 +234,24 @@ class PPOEvalWrapper:
 class Learner(Enum):
     PPO = 1
     SAC = 2
+    TD3 = 3
 
     def __str__(self):
         if self.ppo():
             return "ppo"
-        else:
+        elif self.sac():
             return "sac"
+        else:
+            return "td3"
 
     def ppo(self):
         return self.value == Learner.PPO.value
 
     def sac(self):
         return self.value == Learner.SAC.value
+
+    def td3(self):
+        return self.value == Learner.TD3.value
 
     def create_learner(self, env, parameters):
         if self.ppo() and not issubclass(type(env), VecEnv):
@@ -221,17 +260,22 @@ class Learner(Enum):
         if self.ppo():
             model = PPO(PPOMlpPolicy, env, **parameters["common"], **parameters[str(self)])
             interface = PPOInterface(model, env.observation_space.shape[0])
-        else:
+        elif self.sac():
             model = SAC(SACMlpPolicy, env, **parameters["common"], **parameters[str(self)])
             interface = SACInterface(model, env.observation_space.shape[0])
+        else:
+            model = TD3(TD3MlpPolicy, env, **parameters["common"], **parameters[str(self)])
+            interface = TD3Interface(model, env.observation_space.shape[0])
 
         return model, interface
 
     def load(self, path, env):
         if self.ppo():
             return PPO.load(path, env=env, device="cuda:0")
-        else:
+        elif self.sac():
             return SAC.load(path, env=env, device="cuda:0")
+        else:
+            return TD3.load(path, env=env, device="cuda:0")
 
     def load_for_evaluation(self, path, env):
         if self.ppo() and not issubclass(type(env), VecEnv):
@@ -248,6 +292,8 @@ class Learner(Enum):
             return Learner.PPO
         elif string == str(Learner.SAC):
             return Learner.SAC
+        elif string == str(Learner.TD3):
+            return Learner.TD3
         else:
             raise RuntimeError("Invalid string: '" + string + "'")
 
@@ -332,7 +378,7 @@ class AbstractExperiment(ABC):
                      CurriculumType.ACL: ["ACL_EPS", "ACL_ETA"],
                      CurriculumType.PLR: ["PLR_REPLAY_RATE", "PLR_BETA", "PLR_RHO"],
                      CurriculumType.VDS: ["VDS_NQ", "VDS_LR", "VDS_EPOCHS", "VDS_BATCHES"],
-                     CurriculumType.ACRL: ["ACRL_LSP", "ACRL_EBU"]}
+                     CurriculumType.ACRL: ["ACRL_LAMBDA"]}
 
     def __init__(self, base_log_dir, curriculum_name, learner_name, parameters, seed, view=False):
         self.base_log_dir = base_log_dir
@@ -376,7 +422,7 @@ class AbstractExperiment(ABC):
                              "GG_P_OLD": float, "DELTA": float, "EPS": float, "MAZE_TYPE": str, "ACL_EPS": float,
                              "ACL_ETA": float, "PLR_REPLAY_RATE": float, "PLR_BETA": float, "PLR_RHO": float,
                              "VDS_NQ": int, "VDS_LR": float, "VDS_EPOCHS": int, "VDS_BATCHES": int,
-                             "ACRL_LSP": float, "ACRL_EBU": float}
+                             "ACRL_LAMBDA": float}
         for key in sorted(self.parameters.keys()):
             if key not in allowed_overrides:
                 raise RuntimeError("Parameter '" + str(key) + "'not allowed'")

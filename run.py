@@ -11,11 +11,11 @@ def main():
     parser.add_argument("--type", type=str, default="wasserstein",
                         choices=["default", "random", "self_paced", "wasserstein", "alp_gmm",
                                  "goal_gan", "acl", "plr", "vds", "acrl"])
-    parser.add_argument("--learner", type=str, default="ppo", choices=["ppo", "sac"])
+    parser.add_argument("--learner", type=str, default="ppo", choices=["ppo", "sac", "td3"])
     parser.add_argument("--env", type=str, default="minigrid",
                         choices=["point_mass_2d", "maze", "minigrid-a", "minigrid-b", "minigrid-c", "u-maze", "ant-maze", "swimmer-maze"])
     parser.add_argument("--seed", type=int, default=1)
-    parser.add_argument("--n_cores", type=int, default=4)
+    parser.add_argument("--n_cores", type=int, default=8)
 
     args, remainder = parser.parse_known_args()
     parameters = parse_parameters(remainder)

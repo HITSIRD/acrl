@@ -4,7 +4,8 @@ import matplotlib
 import numpy as np
 from matplotlib import cm
 
-from acrl.experiments.u_maze_experiment import UMazeExperiment
+from acrl.experiments.ant_maze_experiment import AntMazeExperiment
+from acrl.experiments.swimmer_maze_experiment import SwimmerMazeExperiment
 from misc.util import add_plot
 import matplotlib.pyplot as plt
 
@@ -39,11 +40,11 @@ def performance_plot(ax=None, path=None, base_log_dir="logs"):
     for method, color in zip(["self_paced", "random", "default", "wasserstein", "goal_gan", "alp_gmm",
                               "acl", "plr", "vds", "acrl"],
                              ["C0", "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9"]):
-        exp = UMazeExperiment(base_log_dir, method, "ppo", {}, seed=1)
+        exp = AntMazeExperiment(base_log_dir, method, "sac", {}, seed=1)
         log_dir = os.path.dirname(exp.get_log_dir())
         lines.append(add_plot(log_dir, ax, color))
 
-    ax.set_title('U-Maze', fontsize=FONT_SIZE)
+    ax.set_title('Swimmer-Maze', fontsize=FONT_SIZE)
     ax.set_ylabel(r"Episodic Return", fontsize=FONT_SIZE, labelpad=2.)
     ax.set_xlabel(r"Train Steps ($\times 10^6$)", fontsize=FONT_SIZE, labelpad=2.)
 
@@ -81,7 +82,7 @@ def performance_plot(ax=None, path=None, base_log_dir="logs"):
 
 
 if __name__ == "__main__":
-    os.makedirs("figures", exist_ok=True)
+    os.makedirs("../../figures", exist_ok=True)
     # base_log_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "logs")
     base_log_dir = "/home/wenyongyan/文档/acrl/logs"
-    performance_plot(path="figures/u_maze/0.2.pdf", base_log_dir=base_log_dir)
+    performance_plot(path="../../figures/ant_maze/ant_maze.pdf", base_log_dir=base_log_dir)

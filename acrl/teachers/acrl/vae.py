@@ -467,10 +467,13 @@ class RolloutStorageVAE(object):
             self.step_idx += 1
             if done:
                 self.task[self.insert_idx] = torch.from_numpy(np.array(task))
-                self.episode_return[self.insert_idx] = self.reward[self.insert_idx].sum().numpy()
+                self.episode_return[self.insert_idx] = self.reward[self.insert_idx, :self.step_idx].sum().numpy()
                 self.insert_idx = (self.insert_idx + 1) % self.max_buffer_size
                 self.step_idx = 0
             self.buffer_len = max(self.buffer_len, self.insert_idx)
+
+            # if not done and self.step_idx == self.max_traj_len:
+            #     self.step_idx = 0
         elif trajectory is not None:
             prev_state, action, reward, next_state, task = trajectory
             trajectory_len = len(action)

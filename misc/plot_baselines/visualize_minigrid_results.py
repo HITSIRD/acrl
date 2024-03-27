@@ -4,8 +4,7 @@ import matplotlib
 import numpy as np
 from matplotlib import cm
 
-from acrl.experiments.ant_maze_experiment import AntMazeExperiment
-from acrl.experiments.swimmer_maze_experiment import SwimmerMazeExperiment
+from acrl.experiments import MinigridAExperiment
 from misc.util import add_plot
 import matplotlib.pyplot as plt
 
@@ -23,13 +22,14 @@ plt.rcParams.update({
     "font.family": "serif"
 })
 
-
-FONT_SIZE = 12
+FONT_SIZE = 15
 TICK_SIZE = 6
+
+
 def performance_plot(ax=None, path=None, base_log_dir="logs"):
     if ax is None:
         f = plt.figure(figsize=(4.5, 3))
-        ax = plt.Axes(f, [0.16, 0.19, 0.82, 0.71])
+        ax = plt.Axes(f, [0.13, 0.19, 0.86, 0.71])
         f.add_axes(ax)
         show = True
     else:
@@ -40,38 +40,34 @@ def performance_plot(ax=None, path=None, base_log_dir="logs"):
     for method, color in zip(["self_paced", "random", "default", "wasserstein", "goal_gan", "alp_gmm",
                               "acl", "plr", "vds", "acrl"],
                              ["C0", "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9"]):
-        exp = SwimmerMazeExperiment(base_log_dir, method, "ppo", {}, seed=1)
+        exp = MinigridAExperiment(base_log_dir, method, "ppo", {}, seed=1)
         log_dir = os.path.dirname(exp.get_log_dir())
         lines.append(add_plot(log_dir, ax, color))
 
-    ax.set_title('Swimmer-Maze', fontsize=FONT_SIZE)
+    ax.set_title('MiniGrid-A', fontsize=FONT_SIZE)
     ax.set_ylabel(r"Episodic Return", fontsize=FONT_SIZE, labelpad=2.)
-    ax.set_xlabel(r"Train Steps ($\times 10^6$)", fontsize=FONT_SIZE, labelpad=2.)
+    ax.set_xlabel(r"Train Steps ($\times 10^3$)", fontsize=FONT_SIZE, labelpad=2.)
 
-    # if show:
-    #     f.legend(lines,
-    #              [r"\sprl", "Random", "Oracle", r"\currot", r"\goalgan", r"\alpgmm", r"\acl", r"\plr", r"\vds", "acrl"],
-    #              fontsize=FONT_SIZE, loc='upper left', bbox_to_anchor=(0.02, 1.01), ncol=4, columnspacing=0.4,
-    #              handlelength=0.9, handletextpad=0.25)
     if show:
         ax.legend(lines,
-                 [r"\sprl", "Random", "Default", r"CURROT", r"Goal GAN", r"ALP-GMM", r"ACL", r"PLR", r"VDS", "ACRL (ours)"],
-                 fontsize=10, loc='upper left')
+                  [r"\sprl", "Random", "Default", "CURROT", "Goal GAN", "ALP-GMM", r"\acl", "PLR", "VDS",
+                   "ACRL (ours)"],
+                  fontsize=11, loc='upper left')
 
-    ax.set_xticks([0, 40, 80, 120, 160, 200])
-    ax.set_xticklabels([r"$0$", r"$0.2$", r"$0.4$", r"$0.6$", r"$0.8$", r"1.0"])
-    # ax.set_xlim([0, 200])
+    ax.set_xticks([0, 30, 60, 90, 120, 150])
+    ax.set_xticklabels([r"$0$", r"$30$", r"$60$", r"$90$", r"$120$", r"150"])
+    # ax.set_xlim([0, 150])
 
-    ax.set_yticks([-100, -80, -60, -40, -20])
-    ax.set_yticklabels([r"$-100$", r"$-80$", r"$-60$", r"$-40$", r"$-20$"])
-    # ax.set_ylim([-105, -10])
+    # ax.set_yticks([-1, -0.5, 0, 0.5, 1.0])
+    # ax.set_yticklabels([r"$-1$", r"$-0.5$", r"$0$", r"$0.5$", r"$1$"])
+    # ax.set_ylim([-0.1, 0.8])
     ax.grid()
 
     # ax.tick_params(axis='both', which='major', labelsize=TICK_SIZE)
     # ax.tick_params(axis='both', which='minor', labelsize=TICK_SIZE)
-    plt.xticks(size=FONT_SIZE)
-    plt.yticks(size=FONT_SIZE)
-    plt.tight_layout()
+    plt.xticks(size=15)
+    plt.yticks(size=15)
+
     if show:
         if path is None:
             plt.show()
@@ -82,7 +78,7 @@ def performance_plot(ax=None, path=None, base_log_dir="logs"):
 
 
 if __name__ == "__main__":
-    os.makedirs("figures", exist_ok=True)
+    os.makedirs("./figures/minigrid_a", exist_ok=True)
     # base_log_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "logs")
-    base_log_dir = "/home/wenyongyan/文档/currot-icml_副本/logs"
-    performance_plot(path="figures/swimmer_maze_performance.pdf", base_log_dir=base_log_dir)
+    base_log_dir = "./logs"
+    performance_plot(path="./figures/minigrid_a/0.25.pdf", base_log_dir=base_log_dir)

@@ -84,7 +84,7 @@ class SwimmerMazeExperiment(AbstractExperiment):
     GG_FIT_RATE = {Learner.PPO: 200, Learner.SAC: None}
     GG_P_OLD = {Learner.PPO: 0.2, Learner.SAC: None}
 
-    ACRL_LSP_RATIO = config['lsp_ratio']
+    ACRL_LAMBDA = config['lambda']
     ACRL_EBU_RATIO = config['ebu_ratio']
 
     def __init__(self, base_log_dir, curriculum_name, learner_name, parameters, seed):

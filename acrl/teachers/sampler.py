@@ -1,26 +1,26 @@
 from typing_extensions import NoReturn
 import numpy as np
 
-from acrl.environments.minigrid.envs import AEnv, BEnv, CEnv
 
 class MinigridSampler:
-    def __init__(self, context_lb, context_ub):
+    def __init__(self, context_lb, context_ub, post_sampler):
         self.LOWER_CONTEXT_BOUNDS = context_lb
         self.UPPER_CONTEXT_BOUNDS = context_ub
+        self.post_sampler = post_sampler  # reject sampler of specific environment
 
-    def sample(self, samples=None, size=None):
+    def sample(self, env, samples=None, size=None):
         count = 0
         if samples is None:
             if size is None:
                 sample = np.random.uniform(self.LOWER_CONTEXT_BOUNDS, self.UPPER_CONTEXT_BOUNDS)
-                while not AEnv._is_feasible(sample):
+                while not self.post_sampler(sample):
                     sample = np.random.uniform(self.LOWER_CONTEXT_BOUNDS, self.UPPER_CONTEXT_BOUNDS)
                 return sample
             else:
                 return np.array([self.sample() for i in range(size)])
         else:
             sample = samples[np.random.randint(0, samples.shape[0]), :]
-            while not AEnv._is_feasible(sample):
+            while not self.post_sampler(sample):
                 sample = samples[np.random.randint(0, samples.shape[0]), :]
                 count += 1
                 if count > 100:

@@ -39,15 +39,15 @@ def plot_performance(log_dir):
 
     ax = plt.gca()
     lines = []
-    lines.append(add_plot(log_dir + 'ppo_ACRL_EBU_RATIO=0.01_ACRL_LSP_RATIO=0', ax, 'C0'))
-    lines.append(add_plot(log_dir + 'ppo_ACRL_EBU_RATIO=0.25_ACRL_LSP_RATIO=0', ax, 'C1'))
-    lines.append(add_plot(log_dir + 'ppo_ACRL_EBU_RATIO=0.5_ACRL_LSP_RATIO=0', ax, 'C2'))
-    lines.append(add_plot(log_dir + 'ppo_ACRL_EBU_RATIO=0.75_ACRL_LSP_RATIO=0', ax, 'C3'))
-    lines.append(add_plot(log_dir + 'ppo_ACRL_EBU_RATIO=1.0_ACRL_LSP_RATIO=0', ax, 'C4'))
-    lines.append(add_plot(log_dir + 'ppo_ACRL_EBU_RATIO=0_ACRL_LSP_RATIO=0.25', ax, 'C5'))
-    lines.append(add_plot(log_dir + 'ppo_ACRL_EBU_RATIO=0_ACRL_LSP_RATIO=0.5', ax, 'C6'))
-    lines.append(add_plot(log_dir + 'ppo_ACRL_EBU_RATIO=0_ACRL_LSP_RATIO=0.75', ax, 'C7'))
-    lines.append(add_plot(log_dir + 'ppo_ACRL_EBU_RATIO=0_ACRL_LSP_RATIO=1.0', ax, 'C8'))
+    lines.append(add_plot(log_dir + 'ppo_ACRL_EBU_RATIO=0.01_ACRL_LAMBDA=0', ax, 'C0'))
+    lines.append(add_plot(log_dir + 'ppo_ACRL_EBU_RATIO=0.25_ACRL_LAMBDA=0', ax, 'C1'))
+    lines.append(add_plot(log_dir + 'ppo_ACRL_EBU_RATIO=0.5_ACRL_LAMBDA=0', ax, 'C2'))
+    lines.append(add_plot(log_dir + 'ppo_ACRL_EBU_RATIO=0.75_ACRL_LAMBDA=0', ax, 'C3'))
+    lines.append(add_plot(log_dir + 'ppo_ACRL_EBU_RATIO=1.0_ACRL_LAMBDA=0', ax, 'C4'))
+    lines.append(add_plot(log_dir + 'ppo_ACRL_EBU_RATIO=0_ACRL_LAMBDA=0.25', ax, 'C5'))
+    lines.append(add_plot(log_dir + 'ppo_ACRL_EBU_RATIO=0_ACRL_LAMBDA=0.5', ax, 'C6'))
+    lines.append(add_plot(log_dir + 'ppo_ACRL_EBU_RATIO=0_ACRL_LAMBDA=0.75', ax, 'C7'))
+    lines.append(add_plot(log_dir + 'ppo_ACRL_EBU_RATIO=0_ACRL_LAMBDA=1.0', ax, 'C8'))
 
     # ax.tickabel_format(style='sci', scilimits=(-1, 2), axis='x')
     # ax.get_xaxis().get_offset_text().set(va='bottom', ha='left')
@@ -75,7 +75,7 @@ def plot_performance(log_dir):
 
 
 if __name__ == "__main__":
-    os.makedirs("figures", exist_ok=True)
+    os.makedirs("../figures", exist_ok=True)
     # base_log_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "logs")
     base_log_dir = "/home/wenyongyan/文档/currot-icml_副本/logs/u_maze/acrl/"
     plot_performance(base_log_dir)

@@ -31,15 +31,16 @@ class TransitionEncoder(nn.Module):
         self.reparameterise = self._sample_gaussian
 
         # embed action, state, reward
-        # self.state_encoder = FeatureExtractor(state_dim, state_embed_dim, F.relu)
-        # self.action_encoder = FeatureExtractor(action_dim, action_embed_dim, F.relu)
-        # self.reward_encoder = FeatureExtractor(reward_size, reward_embed_dim, F.relu)
-        # self.task_encoder = FeatureExtractor(task_size, task_embed_dim, F.relu)
+        self.state_encoder = FeatureExtractor(state_dim, state_embed_dim, F.relu)
+        self.action_encoder = FeatureExtractor(action_dim, action_embed_dim, F.relu)
+        self.reward_encoder = FeatureExtractor(reward_size, reward_embed_dim, F.relu)
+        self.task_encoder = FeatureExtractor(task_size, task_embed_dim, F.relu)
 
         # curr_input_dim = 1 + state_embed_dim * 2 + 2
         # curr_input_dim = state_embed_dim * 2 + task_size
 
-        curr_input_dim = state_dim * 2 + 1
+        # curr_input_dim = state_dim * 2 + 1
+        curr_input_dim = state_embed_dim * 2 + reward_embed_dim
         # if self.config['task_embedding_size'] > 0:
         #     curr_input_dim += task_embed_dim
 
@@ -73,18 +74,18 @@ class TransitionEncoder(nn.Module):
         # if next_states is not None:
         #     next_states = next_states.reshape((-1, next_states.shape[1], self.state_dim))
 
-        # hps = self.state_encoder(prev_states.float())
-        hps = prev_states.float()
+        hps = self.state_encoder(prev_states.float())
+        # hps = prev_states.float()
 
         # ha = self.action_encoder(actions.float())
         # ha = actions.float()
-        # hr = self.reward_encoder(rewards.float())
-        hr = rewards.float()
+        hr = self.reward_encoder(rewards.float())
+        # hr = rewards.float()
         h = torch.cat((hps, hr), dim=-1)
 
         if next_states is not None:
-            # hns = self.state_encoder(next_states.float())
-            hns = next_states.float()
+            hns = self.state_encoder(next_states.float())
+            # hns = next_states.float()
             h = torch.cat((h, hns), dim=-1)
 
         # if tasks is not None:

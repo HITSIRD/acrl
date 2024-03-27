@@ -282,6 +282,6 @@ def combined_plot(path=None, base_log_dir="logs"):
 
 
 if __name__ == "__main__":
-    os.makedirs("figures", exist_ok=True)
+    os.makedirs("../../figures", exist_ok=True)
     base_log_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../currot-icml", "logs")
-    combined_plot(path="figures/point_mass_precision+performance.pdf", base_log_dir=base_log_dir)
+    combined_plot(path="../../figures/point_mass_precision+performance.pdf", base_log_dir=base_log_dir)

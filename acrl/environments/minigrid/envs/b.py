@@ -119,7 +119,7 @@ class BEnv(MiniGridEnv):
         return self.task
 
     @staticmethod
-    def _is_feasible(context):
+    def is_feasible(context):
         # Check that the context is not in or beyond the outer wall
         # if context[0] > 5.5 and context[0] < 6.5:
         #     if context[1] < 7.5:
@@ -255,312 +255,312 @@ class BEnv(MiniGridEnv):
 
         return obs
 
-    def plot_latent_cluster(self,
-                            env,
-                            policy,
-                            iter_idx,
-                            teacher,
-                            encoder=None,
-                            task_decoder=None,
-                            image_folder=None):
-        # fig, (ax1) = plt.subplots(1, 1, figsize=(12, 12))
-        from acrl.teachers.acrl.util import sample_trajectory, trajectory_embedding
-
-        cmap = plt.colormaps['spring']
-
-        tasks = [teacher.sample() for i in range(64)]
-        # tasks = np.unique(np.array(tasks), axis=0).tolist()
-
-        # # ax1.set_xlim(0, 10)
-        # # ax1.set_ylim(0, 10)
-        # ax1.tick_params(labelsize=20)
-        #
-        # # tasks = torch.from_numpy(tasks)
-        # for task in tasks:
-        #     latent_means, latent_logvars, _, _, _, _, _ = get_test_rollout(env, args, policy, transition_encoder, task)
-        #     latent_means = torch.stack(latent_means).squeeze(1).cpu().numpy()
-        #
-        #     # ax2.scatter(pos[:, 0], pos[:, 1], s=500, c=rand_colors, cmap=cmap)
-        #     # latent_std = torch.exp(0.5 * torch.stack(latent_logvars)).mean(dim=-1).cpu().numpy()
-        #     latent_std = torch.exp(0.5 * torch.stack(latent_logvars)).squeeze(1).cpu().numpy()
-        #
-        #     goal = f'[{task[0]}, {task[1]}]'
-        #
-        #     # s = 200 * latent_std
-        #     # num_sample = 4096
-        #     # sample = []
-        #     # for i, mean in enumerate(latent_means):
-        #     #     sample.append(utl.sample_gaussian(mean, latent_logvars[i], num=num_sample).cpu().numpy())
-        #     # sample = np.concatenate(sample, axis=-1)
-        #
-        #     ax1.scatter(latent_means[:, 0], latent_means[:, 1], s=200, label=goal)
-        #     for i, std in enumerate(latent_std):
-        #         v_x = (latent_means[i][0], latent_means[i][0])
-        #         v_y = (latent_means[i][1] - std[1] * 0.01, latent_means[i][1] + std[1] * 0.01)
-        #         h_x = (latent_means[i][0] - std[0] * 0.01, latent_means[i][0] + std[0] * 0.01)
-        #         h_y = (latent_means[i][1], latent_means[i][1])
-        #         ax1.plot(v_x, v_y, color='k', linewidth=1, alpha=0.1)
-        #         ax1.plot(h_x, h_y, color='k', linewidth=1, alpha=0.1)
-        #
-        #     center = latent_means.mean(axis=0)
-        #     ax1.text(center[0], center[1], goal)
-        #
-        # ax1.legend()
-        # ax1.set_title('latent cluster', size=20)
-
-        # position = fig.add_axes([0.93, 0.11, 0.02, 0.77])
-        # colorbar = fig.colorbar(plt.cm.ScalarMappable(norm=Normalize(0, 1), cmap=cmap), cax=position)
-        # colorbar.ax.set_yticks([])
-        # plt.tight_layout()
-
-        # if image_folder is not None:
-        #     plt.savefig('{}/{}_latent_cluster'.format(image_folder, iter_idx))
-        #     plt.close()
-        # else:
-        #     plt.show()
-
-        #  plot the context latent output
-        fig, (ax1) = plt.subplots(1, 1, figsize=(6, 6))
-        ax1.tick_params(labelsize=16)
-
-        episode_returns = []
-        scale = 0.01
-        means = []
-
-        # tasks = torch.from_numpy(tasks)
-        for task in tasks:
-            latent_means, latent_logvars, _, _, _, _, episode_return = sample_trajectory(env, policy, encoder, task)
-            if episode_return < 0.3:
-                continue
-            mean, logvars = trajectory_embedding(latent_means, latent_logvars)
-            mean = mean.cpu().detach().numpy()
-            means.append(mean)
-            episode_returns.append(episode_return)
-            # v_x = (mean[0], mean[0])
-            # v_y = (mean[1] - std[1] * scale, mean[1] + std[1] * scale)
-            # h_x = (mean[0] - std[0] * scale, mean[0] + std[0] * scale)
-            # h_y = (mean[1], mean[1])
-            # print(f'mean: {mean}')
-            # print(f'std: {std}')
-            # ax1.plot(v_x, v_y, color='k', linewidth=1, alpha=0.1)
-            # ax1.plot(h_x, h_y, color='k', linewidth=1, alpha=0.1)
-            # ax1.text(mean[0], mean[1], goal)
-            goal = f'[{round(task[0], 1)}, {round(task[1], 1)}]'
-            ax1.text(mean[0], mean[1], goal)
-
-        latent_means, latent_logvars, _, _, _, _, episode_return = sample_trajectory(env, policy, encoder, [7, 1])
-        mean, logvars = trajectory_embedding(latent_means, latent_logvars)
-        mean = mean.cpu().detach().numpy()
-        means.append(mean)
-        episode_returns.append(episode_return)
-        goal = 'TARGET [6, 6]'
-        ax1.text(mean[0], mean[1], goal)
-
-        # ax1.legend()
-        means = np.array(means)
-        episode_returns = np.array(episode_returns)
-        ax1.scatter(means[:, 0], means[:, 1], s=200, c=episode_returns, cmap=cmap)
-        ax1.set_title('latent space', size=16)
-        # ax1.axes.xaxis.set_ticks([])
-        # ax1.axes.yaxis.set_ticks([])
-        # colorbar = fig.colorbar(plt.cm.ScalarMappable(norm=Normalize(0, 1), cmap=cmap), cax=position)
-        colorbar = fig.colorbar(
-            plt.cm.ScalarMappable(norm=Normalize(np.min(episode_returns), np.max(episode_returns)), cmap=cmap))
-        # colorbar.ax.set_yticks([])
-        plt.tight_layout()
-
-        if image_folder is not None:
-            plt.savefig('{}/{}_latent.pdf'.format(image_folder, iter_idx))
-            plt.close()
-        else:
-            plt.show()
-
-        # with label
-        # fig, (ax1) = plt.subplots(1, 1, figsize=(6, 6))
-        # ax1.tick_params(labelsize=16)
-        #
-        # # tasks = torch.from_numpy(tasks)
-        # for task in tasks:
-        #     latent_means, latent_logvars, _, _, _, _, _ = sample_trajectory(env, policy, encoder, task)
-        #     mean, logvars = trajectory_embedding(latent_means, latent_logvars)
-        #     mean = mean.detach().cpu().numpy()
-        #     task = np.rint(task)
-        #     goal = f'[{task[0]}, {task[1]}]'
-        #
-        #     ax1.scatter(mean[0], mean[1], s=200, label=goal)
-        #     ax1.text(mean[0], mean[1], goal)
-        #
-        # # ax1.legend()
-        # ax1.set_title('latent space', size=16)
-        # # ax1.axes.xaxis.set_ticks([])
-        # # ax1.axes.yaxis.set_ticks([])
-        # plt.tight_layout()
-        #
-        # if image_folder is not None:
-        #     plt.savefig('{}/{}_latent_with_label.pdf'.format(image_folder, iter_idx))
-        #     plt.close()
-        # else:
-        #     plt.show()
-
-        # #  last latent
-        # fig, (ax1) = plt.subplots(1, 1, figsize=(12, 12))
-        # ax1.tick_params(labelsize=20)
-        # last_means = torch.stack(last_means).cpu().numpy()
-        # ax1.scatter(last_means[:, 0], last_means[:, 1], s=200)
-        # for i, task in enumerate(tasks):
-        #     goal = f'[{task[0]}, {task[1]}]'
-        #     ax1.text(last_means[i][0], last_means[i][1], goal)
-        #
-        # # ax1.legend()
-        # ax1.set_title('last latent', size=20)
-        #
-        # # position = fig.add_axes([0.93, 0.11, 0.02, 0.77])
-        # # colorbar = fig.colorbar(plt.cm.ScalarMappable(norm=Normalize(0, 1), cmap=cmap), cax=position)
-        # # colorbar.ax.set_yticks([])
-        # # plt.tight_layout()
-        # if image_folder is not None:
-        #     plt.savefig('{}/{}_last_latent'.format(image_folder, iter_idx))
-        #     plt.close()
-        # else:
-        #     plt.show()
-
-        # if task_decoder is not None:
-        #     #  visualize task decoder
-        #     fig, (ax1) = plt.subplots(1, 1, figsize=(20, 20))
-        #     ax1.tick_params(labelsize=40)
-        #
-        #     points = []
-        #     colors = []
-        #     for i in range(35):
-        #         for j in range(35):
-        #             x = 0.1 * i - 1.75
-        #             y = 0.1 * j - 0.5
-        #             task = task_decoder(torch.from_numpy(np.array([x, y])).float().to(device)).detach().cpu().numpy()
-        #             goal = f'[{task[0]:.2f}, {task[1]:.2f}]'
-        #             points.append([x, y])
-        #             if task[0] < 0:
-        #                 task[0] = 0
-        #             if task[0] > 8:
-        #                 task[0] = 8
-        #             if task[1] < 0:
-        #                 task[1] = 0
-        #             if task[1] > 8:
-        #                 task[1] = 8
-        #             colors.append((task[0] / 8.0, task[1] / 8.0, 0))
-        #             # ax1.text(x, y, goal, size=5)
-        #
-        #     colors = np.array(colors)
-        #     points = np.array(points)
-        #     ax1.scatter(points[:, 0], points[:, 1], marker='s', s=850, c=colors)
-        #     # ax1.set_title('task decode output', size=40)
-        #     # plt.axis([-3, 0.5, -1.75, 1.75])
-        #     plt.tight_layout()
-        #
-        #     if image_folder is not None:
-        #         plt.savefig('{}/{}_task_decoder_output.pdf'.format(image_folder, iter_idx))
-        #         plt.close()
-        #     else:
-        #         plt.show()
-        #
-        #     #  plot legend
-        #     fig, (ax1) = plt.subplots(1, 1, figsize=(5, 5))
-        #     ax1.tick_params(labelsize=14)
-
-        # points = []
-        # colors = []
-        # for i in range(8):
-        #     for j in range(8):
-        #         x = i + 1
-        #         y = j + 1
-        #         points.append([x, y])
-        #         colors.append((x / 8.0, y / 8.0, 0))
-        #         # ax1.text(x, y, goal, size=5)
-        #
-        # colors = np.array(colors)
-        # points = np.array(points)
-        # ax1.scatter(points[:, 0], points[:, 1], marker='s', s=1200, c=colors)
-        # plt.axis([0.5, 8.5, 0.5, 8.5])
-        # if image_folder is not None:
-        #     plt.savefig('{}/{}_reference.pdf'.format(image_folder, iter_idx))
-        #     plt.close()
-        # else:
-        #     plt.show()
-
-    def plot_dist(self,
-                  iter_idx,
-                  teacher,
-                  image_folder=None):
-        self.context = [6, 6, 4, 8]
-        self.reset()
-        N = 256
-        vals = np.ones((N, 4))
-        vals[:, 0] = np.linspace(0, 1, N)
-        vals[:, 1] = np.linspace(0, 0, N)
-        vals[:, 2] = np.linspace(0, 0, N)
-        cmap = ListedColormap(vals)
-
-        img = self.get_frame(self.highlight, self.tile_size, self.agent_pov)
-        for i in range(256):
-            task = np.rint(teacher.sample()).astype(int).tolist()
-            if self.domain.count(task) == 0:
-                offset_x = self.tile_size * task[1] + 1
-                offset_y = self.tile_size * task[0] + 1
-                img[offset_x:offset_x + self.tile_size - 1, offset_y:offset_y + self.tile_size - 1, 0] += 10
-
-                key_x = self.tile_size * task[3] + 1
-                key_y = self.tile_size * task[2] + 1
-                img[key_x:key_x + self.tile_size - 1, key_y:key_y + self.tile_size - 1, 2] += 10
-
-        plt.imshow(img)
-        color_bar = plt.colorbar(plt.cm.ScalarMappable(norm=Normalize(0, 0.1), cmap=cmap))
-        plt.axis('off')
-
-        if image_folder is not None:
-            plt.savefig('{}/{}_dist.pdf'.format(image_folder, iter_idx), bbox_inches='tight', pad_inches=0)
-            plt.close()
-        else:
-            plt.show()
-
-    # def plot_evaluate_task(self,
-    #                        env,
-    #                        policy,
-    #                        encoder,
-    #                        iter_idx,
-    #                        image_folder=None):
-    #     from acrl.teachers.acrl.util import sample_trajectory
-    #     env.reset()
+    # def plot_latent_cluster(self,
+    #                         env,
+    #                         policy,
+    #                         iter_idx,
+    #                         teacher,
+    #                         encoder=None,
+    #                         task_decoder=None,
+    #                         image_folder=None):
+    #     # fig, (ax1) = plt.subplots(1, 1, figsize=(12, 12))
+    #     from acrl.teachers.acrl.util import sample_trajectory, trajectory_embedding
     #
+    #     cmap = plt.colormaps['spring']
+    #
+    #     tasks = [teacher.sample() for i in range(64)]
+    #     # tasks = np.unique(np.array(tasks), axis=0).tolist()
+    #
+    #     # # ax1.set_xlim(0, 10)
+    #     # # ax1.set_ylim(0, 10)
+    #     # ax1.tick_params(labelsize=20)
+    #     #
+    #     # # tasks = torch.from_numpy(tasks)
+    #     # for task in tasks:
+    #     #     latent_means, latent_logvars, _, _, _, _, _ = get_test_rollout(env, args, policy, transition_encoder, task)
+    #     #     latent_means = torch.stack(latent_means).squeeze(1).cpu().numpy()
+    #     #
+    #     #     # ax2.scatter(pos[:, 0], pos[:, 1], s=500, c=rand_colors, cmap=cmap)
+    #     #     # latent_std = torch.exp(0.5 * torch.stack(latent_logvars)).mean(dim=-1).cpu().numpy()
+    #     #     latent_std = torch.exp(0.5 * torch.stack(latent_logvars)).squeeze(1).cpu().numpy()
+    #     #
+    #     #     goal = f'[{task[0]}, {task[1]}]'
+    #     #
+    #     #     # s = 200 * latent_std
+    #     #     # num_sample = 4096
+    #     #     # sample = []
+    #     #     # for i, mean in enumerate(latent_means):
+    #     #     #     sample.append(utl.sample_gaussian(mean, latent_logvars[i], num=num_sample).cpu().numpy())
+    #     #     # sample = np.concatenate(sample, axis=-1)
+    #     #
+    #     #     ax1.scatter(latent_means[:, 0], latent_means[:, 1], s=200, label=goal)
+    #     #     for i, std in enumerate(latent_std):
+    #     #         v_x = (latent_means[i][0], latent_means[i][0])
+    #     #         v_y = (latent_means[i][1] - std[1] * 0.01, latent_means[i][1] + std[1] * 0.01)
+    #     #         h_x = (latent_means[i][0] - std[0] * 0.01, latent_means[i][0] + std[0] * 0.01)
+    #     #         h_y = (latent_means[i][1], latent_means[i][1])
+    #     #         ax1.plot(v_x, v_y, color='k', linewidth=1, alpha=0.1)
+    #     #         ax1.plot(h_x, h_y, color='k', linewidth=1, alpha=0.1)
+    #     #
+    #     #     center = latent_means.mean(axis=0)
+    #     #     ax1.text(center[0], center[1], goal)
+    #     #
+    #     # ax1.legend()
+    #     # ax1.set_title('latent cluster', size=20)
+    #
+    #     # position = fig.add_axes([0.93, 0.11, 0.02, 0.77])
+    #     # colorbar = fig.colorbar(plt.cm.ScalarMappable(norm=Normalize(0, 1), cmap=cmap), cax=position)
+    #     # colorbar.ax.set_yticks([])
+    #     # plt.tight_layout()
+    #
+    #     # if image_folder is not None:
+    #     #     plt.savefig('{}/{}_latent_cluster'.format(image_folder, iter_idx))
+    #     #     plt.close()
+    #     # else:
+    #     #     plt.show()
+    #
+    #     #  plot the context latent output
+    #     fig, (ax1) = plt.subplots(1, 1, figsize=(6, 6))
+    #     ax1.tick_params(labelsize=16)
+    #
+    #     episode_returns = []
+    #     scale = 0.01
+    #     means = []
+    #
+    #     # tasks = torch.from_numpy(tasks)
+    #     for task in tasks:
+    #         latent_means, latent_logvars, _, _, _, _, episode_return = sample_trajectory(env, policy, encoder, task)
+    #         if episode_return < 0.3:
+    #             continue
+    #         mean, logvars = trajectory_embedding(latent_means, latent_logvars)
+    #         mean = mean.cpu().detach().numpy()
+    #         means.append(mean)
+    #         episode_returns.append(episode_return)
+    #         # v_x = (mean[0], mean[0])
+    #         # v_y = (mean[1] - std[1] * scale, mean[1] + std[1] * scale)
+    #         # h_x = (mean[0] - std[0] * scale, mean[0] + std[0] * scale)
+    #         # h_y = (mean[1], mean[1])
+    #         # print(f'mean: {mean}')
+    #         # print(f'std: {std}')
+    #         # ax1.plot(v_x, v_y, color='k', linewidth=1, alpha=0.1)
+    #         # ax1.plot(h_x, h_y, color='k', linewidth=1, alpha=0.1)
+    #         # ax1.text(mean[0], mean[1], goal)
+    #         goal = f'[{round(task[0], 1)}, {round(task[1], 1)}]'
+    #         ax1.text(mean[0], mean[1], goal)
+    #
+    #     latent_means, latent_logvars, _, _, _, _, episode_return = sample_trajectory(env, policy, encoder, [7, 1])
+    #     mean, logvars = trajectory_embedding(latent_means, latent_logvars)
+    #     mean = mean.cpu().detach().numpy()
+    #     means.append(mean)
+    #     episode_returns.append(episode_return)
+    #     goal = 'TARGET [6, 6]'
+    #     ax1.text(mean[0], mean[1], goal)
+    #
+    #     # ax1.legend()
+    #     means = np.array(means)
+    #     episode_returns = np.array(episode_returns)
+    #     ax1.scatter(means[:, 0], means[:, 1], s=200, c=episode_returns, cmap=cmap)
+    #     ax1.set_title('latent space', size=16)
+    #     # ax1.axes.xaxis.set_ticks([])
+    #     # ax1.axes.yaxis.set_ticks([])
+    #     # colorbar = fig.colorbar(plt.cm.ScalarMappable(norm=Normalize(0, 1), cmap=cmap), cax=position)
+    #     colorbar = fig.colorbar(
+    #         plt.cm.ScalarMappable(norm=Normalize(np.min(episode_returns), np.max(episode_returns)), cmap=cmap))
+    #     # colorbar.ax.set_yticks([])
+    #     plt.tight_layout()
+    #
+    #     if image_folder is not None:
+    #         plt.savefig('{}/{}_latent.pdf'.format(image_folder, iter_idx))
+    #         plt.close()
+    #     else:
+    #         plt.show()
+    #
+    #     # with label
+    #     # fig, (ax1) = plt.subplots(1, 1, figsize=(6, 6))
+    #     # ax1.tick_params(labelsize=16)
+    #     #
+    #     # # tasks = torch.from_numpy(tasks)
+    #     # for task in tasks:
+    #     #     latent_means, latent_logvars, _, _, _, _, _ = sample_trajectory(env, policy, encoder, task)
+    #     #     mean, logvars = trajectory_embedding(latent_means, latent_logvars)
+    #     #     mean = mean.detach().cpu().numpy()
+    #     #     task = np.rint(task)
+    #     #     goal = f'[{task[0]}, {task[1]}]'
+    #     #
+    #     #     ax1.scatter(mean[0], mean[1], s=200, label=goal)
+    #     #     ax1.text(mean[0], mean[1], goal)
+    #     #
+    #     # # ax1.legend()
+    #     # ax1.set_title('latent space', size=16)
+    #     # # ax1.axes.xaxis.set_ticks([])
+    #     # # ax1.axes.yaxis.set_ticks([])
+    #     # plt.tight_layout()
+    #     #
+    #     # if image_folder is not None:
+    #     #     plt.savefig('{}/{}_latent_with_label.pdf'.format(image_folder, iter_idx))
+    #     #     plt.close()
+    #     # else:
+    #     #     plt.show()
+    #
+    #     # #  last latent
+    #     # fig, (ax1) = plt.subplots(1, 1, figsize=(12, 12))
+    #     # ax1.tick_params(labelsize=20)
+    #     # last_means = torch.stack(last_means).cpu().numpy()
+    #     # ax1.scatter(last_means[:, 0], last_means[:, 1], s=200)
+    #     # for i, task in enumerate(tasks):
+    #     #     goal = f'[{task[0]}, {task[1]}]'
+    #     #     ax1.text(last_means[i][0], last_means[i][1], goal)
+    #     #
+    #     # # ax1.legend()
+    #     # ax1.set_title('last latent', size=20)
+    #     #
+    #     # # position = fig.add_axes([0.93, 0.11, 0.02, 0.77])
+    #     # # colorbar = fig.colorbar(plt.cm.ScalarMappable(norm=Normalize(0, 1), cmap=cmap), cax=position)
+    #     # # colorbar.ax.set_yticks([])
+    #     # # plt.tight_layout()
+    #     # if image_folder is not None:
+    #     #     plt.savefig('{}/{}_last_latent'.format(image_folder, iter_idx))
+    #     #     plt.close()
+    #     # else:
+    #     #     plt.show()
+    #
+    #     # if task_decoder is not None:
+    #     #     #  visualize task decoder
+    #     #     fig, (ax1) = plt.subplots(1, 1, figsize=(20, 20))
+    #     #     ax1.tick_params(labelsize=40)
+    #     #
+    #     #     points = []
+    #     #     colors = []
+    #     #     for i in range(35):
+    #     #         for j in range(35):
+    #     #             x = 0.1 * i - 1.75
+    #     #             y = 0.1 * j - 0.5
+    #     #             task = task_decoder(torch.from_numpy(np.array([x, y])).float().to(device)).detach().cpu().numpy()
+    #     #             goal = f'[{task[0]:.2f}, {task[1]:.2f}]'
+    #     #             points.append([x, y])
+    #     #             if task[0] < 0:
+    #     #                 task[0] = 0
+    #     #             if task[0] > 8:
+    #     #                 task[0] = 8
+    #     #             if task[1] < 0:
+    #     #                 task[1] = 0
+    #     #             if task[1] > 8:
+    #     #                 task[1] = 8
+    #     #             colors.append((task[0] / 8.0, task[1] / 8.0, 0))
+    #     #             # ax1.text(x, y, goal, size=5)
+    #     #
+    #     #     colors = np.array(colors)
+    #     #     points = np.array(points)
+    #     #     ax1.scatter(points[:, 0], points[:, 1], marker='s', s=850, c=colors)
+    #     #     # ax1.set_title('task decode output', size=40)
+    #     #     # plt.axis([-3, 0.5, -1.75, 1.75])
+    #     #     plt.tight_layout()
+    #     #
+    #     #     if image_folder is not None:
+    #     #         plt.savefig('{}/{}_task_decoder_output.pdf'.format(image_folder, iter_idx))
+    #     #         plt.close()
+    #     #     else:
+    #     #         plt.show()
+    #     #
+    #     #     #  plot legend
+    #     #     fig, (ax1) = plt.subplots(1, 1, figsize=(5, 5))
+    #     #     ax1.tick_params(labelsize=14)
+    #
+    #     # points = []
+    #     # colors = []
+    #     # for i in range(8):
+    #     #     for j in range(8):
+    #     #         x = i + 1
+    #     #         y = j + 1
+    #     #         points.append([x, y])
+    #     #         colors.append((x / 8.0, y / 8.0, 0))
+    #     #         # ax1.text(x, y, goal, size=5)
+    #     #
+    #     # colors = np.array(colors)
+    #     # points = np.array(points)
+    #     # ax1.scatter(points[:, 0], points[:, 1], marker='s', s=1200, c=colors)
+    #     # plt.axis([0.5, 8.5, 0.5, 8.5])
+    #     # if image_folder is not None:
+    #     #     plt.savefig('{}/{}_reference.pdf'.format(image_folder, iter_idx))
+    #     #     plt.close()
+    #     # else:
+    #     #     plt.show()
+    #
+    # def plot_dist(self,
+    #               iter_idx,
+    #               teacher,
+    #               image_folder=None):
+    #     self.context = [6, 6, 4, 8]
+    #     self.reset()
     #     N = 256
     #     vals = np.ones((N, 4))
-    #     vals[:, 0] = np.linspace(0, 0, N)
-    #     vals[:, 1] = np.linspace(0, 1, N)
+    #     vals[:, 0] = np.linspace(0, 1, N)
+    #     vals[:, 1] = np.linspace(0, 0, N)
     #     vals[:, 2] = np.linspace(0, 0, N)
     #     cmap = ListedColormap(vals)
     #
     #     img = self.get_frame(self.highlight, self.tile_size, self.agent_pov)
+    #     for i in range(256):
+    #         task = np.rint(teacher.sample()).astype(int).tolist()
+    #         if self.domain.count(task) == 0:
+    #             offset_x = self.tile_size * task[1] + 1
+    #             offset_y = self.tile_size * task[0] + 1
+    #             img[offset_x:offset_x + self.tile_size - 1, offset_y:offset_y + self.tile_size - 1, 0] += 10
     #
-    #     episode_returns = []
-    #     for task in self.possible_goals:
-    #         _, _, _, _, _, _, episode_return = sample_trajectory(env, policy, encoder, task)
-    #         offset_x = self.tile_size * task[1]
-    #         offset_y = self.tile_size * task[0]
-    #         img[offset_x:offset_x + self.tile_size, offset_y:offset_y + self.tile_size] *= 0
-    #         episode_returns.append(episode_return)
-    #         # episode_return = 0 if episode_return < 0 else episode_return
-    #         # img[offset_x:offset_x + self.tile_size, offset_y:offset_y + self.tile_size, 0] = int(
-    #         #     255 - episode_return * 255)
-    #         img[offset_x:offset_x + self.tile_size, offset_y:offset_y + self.tile_size, 1] = int(episode_return * 255)
+    #             key_x = self.tile_size * task[3] + 1
+    #             key_y = self.tile_size * task[2] + 1
+    #             img[key_x:key_x + self.tile_size - 1, key_y:key_y + self.tile_size - 1, 2] += 10
     #
-    #     episode_returns = np.array(episode_returns)
     #     plt.imshow(img)
-    #     color_bar = plt.colorbar(
-    #         plt.cm.ScalarMappable(norm=Normalize(np.min(episode_returns), np.max(episode_returns)), cmap=cmap))
+    #     color_bar = plt.colorbar(plt.cm.ScalarMappable(norm=Normalize(0, 0.1), cmap=cmap))
     #     plt.axis('off')
-    #     plt.tight_layout()
     #
     #     if image_folder is not None:
-    #         plt.savefig('{}/{}_task_evaluation.pdf'.format(image_folder, iter_idx + 1), bbox_inches='tight',
-    #                     pad_inches=0)
+    #         plt.savefig('{}/{}_dist.pdf'.format(image_folder, iter_idx), bbox_inches='tight', pad_inches=0)
     #         plt.close()
     #     else:
     #         plt.show()
+    #
+    # # def plot_evaluate_task(self,
+    # #                        env,
+    # #                        policy,
+    # #                        encoder,
+    # #                        iter_idx,
+    # #                        image_folder=None):
+    # #     from acrl.teachers.acrl.util import sample_trajectory
+    # #     env.reset()
+    # #
+    # #     N = 256
+    # #     vals = np.ones((N, 4))
+    # #     vals[:, 0] = np.linspace(0, 0, N)
+    # #     vals[:, 1] = np.linspace(0, 1, N)
+    # #     vals[:, 2] = np.linspace(0, 0, N)
+    # #     cmap = ListedColormap(vals)
+    # #
+    # #     img = self.get_frame(self.highlight, self.tile_size, self.agent_pov)
+    # #
+    # #     episode_returns = []
+    # #     for task in self.possible_goals:
+    # #         _, _, _, _, _, _, episode_return = sample_trajectory(env, policy, encoder, task)
+    # #         offset_x = self.tile_size * task[1]
+    # #         offset_y = self.tile_size * task[0]
+    # #         img[offset_x:offset_x + self.tile_size, offset_y:offset_y + self.tile_size] *= 0
+    # #         episode_returns.append(episode_return)
+    # #         # episode_return = 0 if episode_return < 0 else episode_return
+    # #         # img[offset_x:offset_x + self.tile_size, offset_y:offset_y + self.tile_size, 0] = int(
+    # #         #     255 - episode_return * 255)
+    # #         img[offset_x:offset_x + self.tile_size, offset_y:offset_y + self.tile_size, 1] = int(episode_return * 255)
+    # #
+    # #     episode_returns = np.array(episode_returns)
+    # #     plt.imshow(img)
+    # #     color_bar = plt.colorbar(
+    # #         plt.cm.ScalarMappable(norm=Normalize(np.min(episode_returns), np.max(episode_returns)), cmap=cmap))
+    # #     plt.axis('off')
+    # #     plt.tight_layout()
+    # #
+    # #     if image_folder is not None:
+    # #         plt.savefig('{}/{}_task_evaluation.pdf'.format(image_folder, iter_idx + 1), bbox_inches='tight',
+    # #                     pad_inches=0)
+    # #         plt.close()
+    # #     else:
+    # #         plt.show()
