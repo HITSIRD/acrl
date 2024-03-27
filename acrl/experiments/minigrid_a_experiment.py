@@ -85,6 +85,8 @@ class MinigridAExperiment(AbstractExperiment):
     GG_FIT_RATE = {Learner.PPO: 200, Learner.SAC: None}
     GG_P_OLD = {Learner.PPO: 0.2, Learner.SAC: None}
 
+    ACRL_LAMBDA = config['lambda']
+
     def __init__(self, base_log_dir, curriculum_name, learner_name, parameters, seed):
         super().__init__(base_log_dir, curriculum_name, learner_name, parameters, seed)
         self.eval_env, self.vec_eval_env = self.create_environment(evaluation=True)

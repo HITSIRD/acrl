@@ -65,8 +65,8 @@ def performance_plot(ax=None, path=None, base_log_dir="logs"):
 
     # ax.tick_params(axis='both', which='major', labelsize=TICK_SIZE)
     # ax.tick_params(axis='both', which='minor', labelsize=TICK_SIZE)
-    plt.xticks(size=15)
-    plt.yticks(size=15)
+    plt.xticks(size=FONT_SIZE)
+    plt.yticks(size=FONT_SIZE)
 
     if show:
         if path is None:
