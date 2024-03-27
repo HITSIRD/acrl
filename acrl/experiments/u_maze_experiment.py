@@ -22,11 +22,11 @@ from acrl.teachers.acrl.config.u_maze import config
 os.environ[
     'LD_LIBRARY_PATH'] = '$LD_LIBRARY_PATH:/home/wenyongyan/.mujoco/mujoco210/bin:$LD_LIBRARY_PATH:/usr/lib/nvidia'
 
-
 # os.environ['LD_LIBRARY_PATH'] = '$LD_LIBRARY_PATH:/usr/lib/nvidia'
 os.environ['LD_PRELOAD'] = '/usr/lib/x86_64-linux-gnu/libGLEW.so'
 # os.add_dll_directory('/home/wenyongyan/.mujoco/mujoco210/bin')
 os.environ['LD_PRELOAD'] = '/home/wenyongyan/.mujoco/mujoco210/bin/libglewegl.so'
+
 
 def context_post_processing(context):
     return context
@@ -87,8 +87,6 @@ class UMazeExperiment(AbstractExperiment):
     GG_FIT_RATE = {Learner.PPO: 200, Learner.SAC: None}
     GG_P_OLD = {Learner.PPO: 0.2, Learner.SAC: None}
 
-    ACRL_LAMBDA = config['lambda']
-
     def __init__(self, base_log_dir, curriculum_name, learner_name, parameters, seed):
         super().__init__(base_log_dir, curriculum_name, learner_name, parameters, seed)
         self.eval_env, self.vec_eval_env = self.create_environment(evaluation=True)
@@ -101,6 +99,8 @@ class UMazeExperiment(AbstractExperiment):
         config['context_dim'] = self.INITIAL_MEAN.shape[0]
         config['state_dim'] = env.observation_space.shape[0]
         config['max_episode_len'] = env.env.spec.max_episode_steps
+        if hasattr(self.parameters, 'ACRL_LAMBDA'):
+            config['lambda'] = float(self.parameters['ACRL_LAMBDA'])
 
         if evaluation or self.curriculum.default():
             teacher = DistributionSampler(self.target_sampler, self.LOWER_CONTEXT_BOUNDS, self.UPPER_CONTEXT_BOUNDS)

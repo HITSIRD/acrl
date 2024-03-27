@@ -89,10 +89,6 @@ class AntMazeExperiment(AbstractExperiment):
     GG_FIT_RATE = {Learner.PPO: 200, Learner.SAC: None}
     GG_P_OLD = {Learner.PPO: 0.2, Learner.SAC: None}
 
-    ACRL_LAMBDA = config['lambda']
-
-    # ACRL_EBU_RATIO = config['ebu_ratio']
-
     def __init__(self, base_log_dir, curriculum_name, learner_name, parameters, seed):
         super().__init__(base_log_dir, curriculum_name, learner_name, parameters, seed)
         self.eval_env, self.vec_eval_env = self.create_environment(evaluation=True)
@@ -100,6 +96,14 @@ class AntMazeExperiment(AbstractExperiment):
 
     def create_environment(self, evaluation=False):
         env = gym.make('AntMaze1-v1')
+
+        config['action_dim'] = env.action_space.shape[0]
+        config['context_dim'] = self.INITIAL_MEAN.shape[0]
+        config['state_dim'] = env.observation_space.shape[0]
+        config['max_episode_len'] = env.env.spec.max_episode_steps
+        if hasattr(self.parameters, 'ACRL_LAMBDA'):
+            config['lambda'] = float(self.parameters['ACRL_LAMBDA'])
+
         if evaluation or self.curriculum.default():
             teacher = DistributionSampler(self.target_sampler, self.LOWER_CONTEXT_BOUNDS, self.UPPER_CONTEXT_BOUNDS)
             env = BaseWrapper(env, teacher, self.DISCOUNT_FACTOR, context_visible=True,
@@ -141,10 +145,6 @@ class AntMazeExperiment(AbstractExperiment):
             env = VDSWrapper(env, teacher, self.DISCOUNT_FACTOR, context_visible=True,
                              context_post_processing=context_post_processing)
         elif self.curriculum.acrl():
-            config['action_dim'] = env.action_space.shape[0]
-            config['context_dim'] = self.INITIAL_MEAN.shape[0]
-            config['state_dim'] = env.observation_space.shape[0]
-            config['max_episode_len'] = env.env.spec.max_episode_steps
             teacher = ACRL(self.TARGET_MEANS.copy(), self.INITIAL_MEAN.copy(), self.INITIAL_VARIANCE.copy(),
                            self.LOWER_CONTEXT_BOUNDS, self.UPPER_CONTEXT_BOUNDS, config, self.get_log_dir())
             env = ACRLWrapper(env, teacher, self.DISCOUNT_FACTOR, episodes_per_update=self.EP_PER_UPDATE,

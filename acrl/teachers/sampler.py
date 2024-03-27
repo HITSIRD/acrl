@@ -8,7 +8,7 @@ class MinigridSampler:
         self.UPPER_CONTEXT_BOUNDS = context_ub
         self.post_sampler = post_sampler  # reject sampler of specific environment
 
-    def sample(self, env, samples=None, size=None):
+    def sample(self, samples=None, size=None):
         count = 0
         if samples is None:
             if size is None:

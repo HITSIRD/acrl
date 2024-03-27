@@ -78,8 +78,7 @@ class ACRL(AbstractTeacher):
         if self.post_sampler is not None:
             while not self.post_sampler(task):
                 task = self._sample()
-        else:
-            return task
+        return task
 
     def _sample(self):
         return self.teacher.sample()

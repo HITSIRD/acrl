@@ -85,8 +85,6 @@ class MinigridAExperiment(AbstractExperiment):
     GG_FIT_RATE = {Learner.PPO: 200, Learner.SAC: None}
     GG_P_OLD = {Learner.PPO: 0.2, Learner.SAC: None}
 
-    ACRL_LAMBDA = config['lambda']
-
     def __init__(self, base_log_dir, curriculum_name, learner_name, parameters, seed):
         super().__init__(base_log_dir, curriculum_name, learner_name, parameters, seed)
         self.eval_env, self.vec_eval_env = self.create_environment(evaluation=True)
@@ -99,6 +97,8 @@ class MinigridAExperiment(AbstractExperiment):
         config['context_dim'] = self.INITIAL_MEAN.shape[0]
         config['state_dim'] = env.observation_space.shape[0]
         config['max_episode_len'] = env.max_steps
+        if hasattr(self.parameters, 'ACRL_LAMBDA'):
+            config['lambda'] = float(self.parameters['ACRL_LAMBDA'])
 
         if evaluation or self.curriculum.default():
             teacher = DistributionSampler(self.target_sampler, self.LOWER_CONTEXT_BOUNDS, self.UPPER_CONTEXT_BOUNDS)
