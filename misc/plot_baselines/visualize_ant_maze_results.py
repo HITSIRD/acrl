@@ -26,6 +26,7 @@ plt.rcParams.update({
 
 FONT_SIZE = 12
 TICK_SIZE = 6
+ACRL_LAMBDA = 0.1
 def performance_plot(ax=None, path=None, base_log_dir="logs"):
     if ax is None:
         f = plt.figure(figsize=(4.5, 3))
@@ -40,7 +41,7 @@ def performance_plot(ax=None, path=None, base_log_dir="logs"):
     for method, color in zip(["self_paced", "random", "default", "wasserstein", "goal_gan", "alp_gmm",
                               "acl", "plr", "vds", "acrl"],
                              ["C0", "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9"]):
-        exp = AntMazeExperiment(base_log_dir, method, "sac", {}, seed=1)
+        exp = AntMazeExperiment(base_log_dir, method, "sac", {'ACRL_LAMBDA': ACRL_LAMBDA}, seed=1)
         log_dir = os.path.dirname(exp.get_log_dir())
         lines.append(add_plot(log_dir, ax, color))
 
@@ -82,7 +83,7 @@ def performance_plot(ax=None, path=None, base_log_dir="logs"):
 
 
 if __name__ == "__main__":
-    os.makedirs("../../figures", exist_ok=True)
+    os.makedirs("./figures/ant_maze", exist_ok=True)
     # base_log_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "logs")
-    base_log_dir = "/home/wenyongyan/文档/acrl/logs"
-    performance_plot(path="../../figures/ant_maze/ant_maze.pdf", base_log_dir=base_log_dir)
+    base_log_dir = "./logs"
+    performance_plot(path='./figures/ant_maze/' + str(ACRL_LAMBDA) + '.pdf', base_log_dir=base_log_dir)

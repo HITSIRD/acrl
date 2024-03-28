@@ -22,9 +22,11 @@ plt.rcParams.update({
     "font.family": "serif"
 })
 
-
 FONT_SIZE = 12
 TICK_SIZE = 6
+ACRL_LAMBDA = 0.75
+
+
 def performance_plot(ax=None, path=None, base_log_dir="logs"):
     if ax is None:
         f = plt.figure(figsize=(4.5, 3))
@@ -39,7 +41,7 @@ def performance_plot(ax=None, path=None, base_log_dir="logs"):
     for method, color in zip(["self_paced", "random", "default", "wasserstein", "goal_gan", "alp_gmm",
                               "acl", "plr", "vds", "acrl"],
                              ["C0", "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9"]):
-        exp = UMazeExperiment(base_log_dir, method, "ppo", {}, seed=1)
+        exp = UMazeExperiment(base_log_dir, method, "ppo", {'ACRL_LAMBDA': ACRL_LAMBDA}, seed=1)
         log_dir = os.path.dirname(exp.get_log_dir())
         lines.append(add_plot(log_dir, ax, color))
 
@@ -54,8 +56,9 @@ def performance_plot(ax=None, path=None, base_log_dir="logs"):
     #              handlelength=0.9, handletextpad=0.25)
     if show:
         ax.legend(lines,
-                 [r"\sprl", "Random", "Default", r"CURROT", r"Goal GAN", r"ALP-GMM", r"ACL", r"PLR", r"VDS", "ACRL (ours)"],
-                 fontsize=10, loc='upper left')
+                  [r"\sprl", "Random", "Default", r"CURROT", r"Goal GAN", r"ALP-GMM", r"ACL", r"PLR", r"VDS",
+                   "ACRL (ours)"],
+                  fontsize=10, loc='upper left')
 
     ax.set_xticks([0, 40, 80, 120, 160, 200])
     ax.set_xticklabels([r"$0$", r"$0.2$", r"$0.4$", r"$0.6$", r"$0.8$", r"1.0"])
@@ -84,4 +87,4 @@ if __name__ == "__main__":
     os.makedirs("./figures/u_maze", exist_ok=True)
     # base_log_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "logs")
     base_log_dir = "./logs"
-    performance_plot(path="./figures/u_maze/0.2.pdf", base_log_dir=base_log_dir)
+    performance_plot(path='./figures/u_maze/' + str(ACRL_LAMBDA) + '.pdf', base_log_dir=base_log_dir)
