@@ -104,7 +104,7 @@ class AntMazeExperiment(AbstractExperiment):
         config['context_dim'] = self.INITIAL_MEAN.shape[0]
         config['state_dim'] = env.observation_space.shape[0]
         config['max_episode_len'] = env.env.spec.max_episode_steps
-        if hasattr(self.parameters, 'ACRL_LAMBDA'):
+        if len(self.parameters) > 0:
             config['lambda'] = float(self.parameters['ACRL_LAMBDA'])
 
         if evaluation or self.curriculum.default():
