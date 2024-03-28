@@ -623,8 +623,8 @@ class MazeEnv(gym.Env):
 
         if self.goal is not None:
             # print(self.EPS, next_obs[:2], self.goal[:2])
-            done = bool(((next_obs[:2] - self.goal[:2]) ** 2).sum() < 1)
-            # print(((next_obs[:2] - self.goal[:2]) ** 2).sum())
+            done = bool(((next_obs[:2] - self.goal[:2]) ** 2).sum() < 1.5)
+            # done = bool(((next_obs[:2] - self.goal[:2]) ** 2).sum() < 1.0)
             inner_reward = int(done)
 
         if enable_render:
