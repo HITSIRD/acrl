@@ -28,13 +28,12 @@ class ACRLWrapper(BaseWrapper):
             self.processed_context = self.cur_context
         else:
             self.processed_context = self.context_post_processing(self.cur_context)
-        self.env.context = self.processed_context
         # self.processed_context = self.env.unwrapped.context
-        obs = self.env.reset()
+        obs = self.env.reset(context=self.processed_context.copy())
         obs_wo_context = obs
 
         if self.context_visible:
-            obs = np.concatenate((obs, self.env.context))
+            obs = np.concatenate((obs, self.processed_context))
 
         self.last_obs = obs.copy()
         self.last_obs_wo_context = obs_wo_context
@@ -53,9 +52,9 @@ class ACRLWrapper(BaseWrapper):
 
         # step = np.concatenate((step[0], self.env.unwrapped.context)), step[1], step[2], step[3]
         if with_context:
-            step = step[0], np.concatenate((step[0], self.env.context)), step[1], step[2], step[3]
+            step = step[0], np.concatenate((step[0], self.cur_context)), step[1], step[2], step[3]
         else:
-            step = np.concatenate((step[0], self.env.context)), step[1], step[2], step[3]
+            step = np.concatenate((step[0], self.cur_context)), step[1], step[2], step[3]
         self.last_obs = step[0].copy()
 
         # insert VAE buffer

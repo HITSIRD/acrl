@@ -195,8 +195,7 @@ class VDSWrapper(BaseWrapper):
             self.processed_context = self.cur_context.copy()
         else:
             self.processed_context = self.context_post_processing(self.cur_context).copy()
-        self.env.context = self.processed_context.copy()
-        obs = self.env.reset()
+        obs = self.env.reset(self.processed_context.copy())
 
         if self.context_visible:
             obs = np.concatenate((obs, self.processed_context))

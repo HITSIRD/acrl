@@ -44,7 +44,7 @@ def performance_plot(ax=None, path=None, base_log_dir="logs"):
         log_dir = os.path.dirname(exp.get_log_dir())
         lines.append(add_plot(log_dir, ax, color))
 
-    ax.set_title('MiniGrid-A', fontsize=FONT_SIZE)
+    ax.set_title('MiniGrid-C', fontsize=FONT_SIZE)
     ax.set_ylabel(r"Episodic Return", fontsize=FONT_SIZE, labelpad=2.)
     ax.set_xlabel(r"Train Steps ($\times 10^6$)", fontsize=FONT_SIZE, labelpad=2.)
 

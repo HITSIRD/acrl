@@ -58,7 +58,7 @@ def sample_trajectory(env, policy, encoder, task):
     prev_state, prev_state_wo_context = env.reset(task, with_context=True)
     prev_state = torch.from_numpy(prev_state).unsqueeze(0).float().to(device)
     prev_state_wo_context = torch.from_numpy(prev_state_wo_context).float().to(device)
-    task = torch.tensor(env.env.context).float()
+    task = torch.tensor(task).float()
 
     if hasattr(env.env, 'max_steps'):
         max_steps = env.env.max_steps

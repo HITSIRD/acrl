@@ -24,10 +24,8 @@ plt.rcParams.update({
 
 FONT_SIZE = 12
 TICK_SIZE = 6
-ACRL_LAMBDA = 0.75
 
-
-def performance_plot(ax=None, path=None, base_log_dir="logs"):
+def performance_plot(ax=None, path=None, base_log_dir="logs", acrl_lambda=0.5):
     if ax is None:
         f = plt.figure(figsize=(4.5, 3))
         ax = plt.Axes(f, [0.16, 0.19, 0.82, 0.71])
@@ -41,7 +39,7 @@ def performance_plot(ax=None, path=None, base_log_dir="logs"):
     for method, color in zip(["self_paced", "random", "default", "wasserstein", "goal_gan", "alp_gmm",
                               "acl", "plr", "vds", "acrl"],
                              ["C0", "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9"]):
-        exp = UMazeExperiment(base_log_dir, method, "ppo", {'ACRL_LAMBDA': ACRL_LAMBDA}, seed=1)
+        exp = UMazeExperiment(base_log_dir, method, "ppo", {'ACRL_LAMBDA': acrl_lambda}, seed=1)
         log_dir = os.path.dirname(exp.get_log_dir())
         lines.append(add_plot(log_dir, ax, color))
 
@@ -87,4 +85,6 @@ if __name__ == "__main__":
     os.makedirs("./figures/u_maze", exist_ok=True)
     # base_log_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "logs")
     base_log_dir = "./logs"
-    performance_plot(path='./figures/u_maze/' + str(ACRL_LAMBDA) + '.pdf', base_log_dir=base_log_dir)
+    acrl_lambda = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    for i in acrl_lambda:
+        performance_plot(path='./figures/u_maze/' + str(i) + '.pdf', base_log_dir=base_log_dir, acrl_lambda=i)
