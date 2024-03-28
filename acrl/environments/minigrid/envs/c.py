@@ -76,12 +76,11 @@ class CEnv(MiniGridEnv):
 
     """
 
-    def __init__(self, size=12, max_steps: int | None = None, context=np.array([1, 6, 10, 6]), **kwargs):
+    def __init__(self, size=12, max_steps: int | None = None, **kwargs):
         if max_steps is None:
             max_steps = 200
 
         self.task_dim = 4
-        self.context = context
         self.num_possible_goals = 0
         self.possible_goals = None
         # self.domain = [[1, 1], [5, 5], [5, 6], [5, 7], [5, 8], [6, 5], [7, 5], [8, 5], [1, 6], [1, 7], [1, 8], [2, 6],
@@ -212,8 +211,8 @@ class CEnv(MiniGridEnv):
 
         self.mission = "use the key to open the door and then get to the goal"
 
-    def reset(self, *, seed=None, options=None):
-        super().reset(seed=seed)
+    def reset(self, *, seed=None, options=None, context=None):
+        super().reset(seed=seed, context=context)
         self.count = 0
 
         # Reinitialize episode-specific variables

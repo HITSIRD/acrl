@@ -82,8 +82,8 @@ class BaseWrapper(gym.Env):
         # self.env.env.context = self.processed_context.copy()
 
         # WARNING, MAKE SURE THE UNWRAPPED ENV IS SET CORRECTLY
-        self.env.context = self.processed_context.copy()
-        obs = self.env.reset()
+        # self.env.context = self.processed_context.copy()
+        obs = self.env.reset(context=self.processed_context.copy())
 
         if self.context_visible:
             obs = np.concatenate((obs, self.processed_context))

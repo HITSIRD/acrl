@@ -135,7 +135,9 @@ class MiniGridEnv(gym.Env):
         self.tile_size = tile_size
         self.agent_pov = agent_pov
 
-    def reset(self, *, seed=None, options=None):
+        self.context = None
+
+    def reset(self, *, seed=None, options=None, context=None):
         # super().reset()
 
         # # Reinitialize episode-specific variables
@@ -169,7 +171,8 @@ class MiniGridEnv(gym.Env):
         # obs = self.gen_obs()
         #
         # return obs, {}
-        pass
+
+        self.context = context
 
     def hash(self, size=16):
         """Compute a hash that uniquely identifies the current state of the environment.

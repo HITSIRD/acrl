@@ -117,13 +117,12 @@ class GoalWrapper(Wrapper):
             observation = observation * mask
         return observation, reward, done, info
 
-    def reset(self):
+    def reset(self, **kwargs):
         if self.fix_goal:
             self.goal = self.fix_goal_xy
         else:
             # self.goal = self.goal_space.sample()
-            self.goal = self.context
-            # print(self.goal)
+            self.goal = kwargs['context']
             if self.env._maze_id == "Push":
                 while (self.env.old_invalid_goal(self.goal[:2])):
                     self.goal = self.goal_space.sample()

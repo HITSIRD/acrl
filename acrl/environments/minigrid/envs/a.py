@@ -78,12 +78,11 @@ class AEnv(MiniGridEnv):
 
     """
 
-    def __init__(self, size=8, max_steps: int | None = None, context=np.array([7, 1]), **kwargs):
+    def __init__(self, size=8, max_steps: int | None = None, **kwargs):
         if max_steps is None:
             max_steps = 50
 
         self.task_dim = 2
-        self.context = context
         self.num_possible_goals = 0
         self.possible_goals = None
 
@@ -186,8 +185,8 @@ class AEnv(MiniGridEnv):
 
         self.mission = "use the key to open the door and then get to the goal"
 
-    def reset(self, *, seed=None, options=None):
-        super().reset(seed=seed)
+    def reset(self, *, seed=None, options=None, context=None):
+        super().reset(seed=seed, context=context)
         self.count = 0
 
         # Reinitialize episode-specific variables
