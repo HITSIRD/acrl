@@ -27,14 +27,14 @@ def context_post_processing(context):
 
 
 class MinigridCExperiment(AbstractExperiment):
-    TARGET_MEANS = np.array([6, 9, 14, 1])
+    TARGET_MEANS = np.array([1, 6, 10, 6])
     TARGET_VARIANCES = np.diag([1e-4, 1e-4, 1e-4, 1e-4])
 
     LOWER_CONTEXT_BOUNDS = np.array([0.5, 0.5, 0.5, 0.5])
-    UPPER_CONTEXT_BOUNDS = np.array([14.5, 14.5, 14.5, 14.5])
+    UPPER_CONTEXT_BOUNDS = np.array([10.5, 10.5, 10.5, 10.5])
 
     def target_sampler(self, n=None, rng=None):
-        target = np.array([6., 9., 14., 1.])
+        target = np.array([1., 6., 10., 6.])
         if n is None:
             return target
         else:
@@ -57,9 +57,9 @@ class MinigridCExperiment(AbstractExperiment):
     KL_EPS = 0.25
     DELTA = 0.3
     METRIC_EPS = 1.0
-    EP_PER_UPDATE = 40
+    EP_PER_UPDATE = 200
 
-    STEPS_PER_ITER = 5000
+    STEPS_PER_ITER = 10000
     DISCOUNT_FACTOR = 0.99
     LAM = 0.99
 
@@ -69,8 +69,8 @@ class MinigridCExperiment(AbstractExperiment):
 
     PLR_REPLAY_RATE = 0.85
     PLR_BUFFER_SIZE = 100
-    PLR_BETA = 0.45
-    PLR_RHO = 0.15
+    PLR_BETA = 0.1
+    PLR_RHO = 0.3
 
     VDS_NQ = 5
     VDS_LR = 1e-3

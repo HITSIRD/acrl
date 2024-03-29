@@ -147,6 +147,10 @@ class ALPGMM(AbstractTeacher):
         if (len(self.tasks) < self.nb_random) or (np.random.random() < self.random_task_ratio):
             # Random task sampling
             new_task = self.random_task_generator.sample()
+
+            if self.post_sampler is not None:
+                while not self.post_sampler(new_task):
+                    new_task = self.random_task_generator.sample()
         else:
             # ALP-based task sampling
 

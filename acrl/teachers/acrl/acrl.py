@@ -140,7 +140,7 @@ class LatentSpacePrediction:
         if buffer is None:
             buffer = self.current_tasks
 
-        context = self.current_tasks[np.random.randint(len(buffer))] if np.random.random() > 0.05 else self.target
+        context = self.current_tasks[np.random.randint(len(buffer))] if np.random.random() > 0.1 else self.target
         # context = self.current_tasks[np.random.randint(len(buffer))]
 
         if isinstance(context, torch.Tensor):
