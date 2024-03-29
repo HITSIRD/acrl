@@ -25,6 +25,7 @@ plt.rcParams.update({
 FONT_SIZE = 12
 TICK_SIZE = 6
 
+
 def performance_plot(ax=None, path=None, base_log_dir="logs", acrl_lambda=0.5):
     if ax is None:
         f = plt.figure(figsize=(4.5, 3))
@@ -85,6 +86,6 @@ if __name__ == "__main__":
     os.makedirs("./figures/u_maze", exist_ok=True)
     # base_log_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "logs")
     base_log_dir = "./logs"
-    acrl_lambda = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
-    for i in acrl_lambda:
-        performance_plot(path='./figures/u_maze/' + str(i) + '.pdf', base_log_dir=base_log_dir, acrl_lambda=i)
+    acrl_lambda = 0.25
+    performance_plot(path='./figures/u_maze/' + str(acrl_lambda) + '.pdf', base_log_dir=base_log_dir,
+                     acrl_lambda=acrl_lambda)

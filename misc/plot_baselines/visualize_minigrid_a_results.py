@@ -24,10 +24,9 @@ plt.rcParams.update({
 
 FONT_SIZE = 15
 TICK_SIZE = 6
-ACRL_LAMBDA = 0.1
 
 
-def performance_plot(ax=None, path=None, base_log_dir="logs"):
+def performance_plot(ax=None, path=None, base_log_dir="logs", acrl_lambda=0.25):
     if ax is None:
         f = plt.figure(figsize=(4.5, 3))
         ax = plt.Axes(f, [0.13, 0.19, 0.86, 0.71])
@@ -41,7 +40,7 @@ def performance_plot(ax=None, path=None, base_log_dir="logs"):
     for method, color in zip(["self_paced", "random", "default", "wasserstein", "goal_gan", "alp_gmm",
                               "acl", "plr", "vds", "acrl"],
                              ["C0", "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9"]):
-        exp = MinigridAExperiment(base_log_dir, method, "ppo", {'ACRL_LAMBDA': ACRL_LAMBDA}, seed=1)
+        exp = MinigridAExperiment(base_log_dir, method, "ppo", {'ACRL_LAMBDA': acrl_lambda}, seed=1)
         log_dir = os.path.dirname(exp.get_log_dir())
         lines.append(add_plot(log_dir, ax, color))
 
@@ -82,4 +81,6 @@ if __name__ == "__main__":
     os.makedirs("./figures/minigrid_a", exist_ok=True)
     # base_log_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "logs")
     base_log_dir = "./logs"
-    performance_plot(path='./figures/minigrid_a/' + str(ACRL_LAMBDA) + '.pdf', base_log_dir=base_log_dir)
+    acrl_lambda = 0.25
+    performance_plot(path='./figures/minigrid_a/' + str(acrl_lambda) + '.pdf', base_log_dir=base_log_dir,
+                     acrl_lambda=acrl_lambda)

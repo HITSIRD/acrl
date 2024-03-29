@@ -70,8 +70,8 @@ class MinigridBExperiment(AbstractExperiment):
 
     PLR_REPLAY_RATE = 0.85
     PLR_BUFFER_SIZE = 100
-    PLR_BETA = 0.1
-    PLR_RHO = 0.3
+    PLR_BETA = 0.45
+    PLR_RHO = 0.15
 
     VDS_NQ = 5
     VDS_LR = 1e-3

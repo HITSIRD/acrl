@@ -479,8 +479,7 @@ class AEnv(MiniGridEnv):
                   iter_idx,
                   teacher,
                   image_folder=None):
-        self.context = [7, 1]
-        self.reset()
+        self.reset(context=[7, 1])
         N = 256
         vals = np.ones((N, 4))
         vals[:, 0] = np.linspace(0, 1, N)
@@ -517,7 +516,7 @@ class AEnv(MiniGridEnv):
                            iter_idx,
                            image_folder=None):
         from acrl.teachers.acrl.util import sample_trajectory
-        env.reset()
+        # env.reset(context=[7, 1])
 
         N = 256
         vals = np.ones((N, 4))

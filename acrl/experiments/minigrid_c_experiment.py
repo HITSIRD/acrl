@@ -59,7 +59,7 @@ class MinigridCExperiment(AbstractExperiment):
     METRIC_EPS = 1.0
     EP_PER_UPDATE = 40
 
-    STEPS_PER_ITER = 10000
+    STEPS_PER_ITER = 5000
     DISCOUNT_FACTOR = 0.99
     LAM = 0.99
 

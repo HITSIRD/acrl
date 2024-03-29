@@ -117,6 +117,11 @@ class LatentSpacePrediction:
         self.ebu_ratio = config['ebu_ratio']
         self.task_noise_std = torch.from_numpy(np.array(config['noise_std'])).to(device)
 
+        self.num_target_sample = 20
+        self.target_episode_latent_means = None
+        self.target_episode_latent_logvars = None
+        self.target_return = -np.inf
+
         self.uniform_sampler = uniform_sampler
         self.initialize(self.uniform_sampler)
 
@@ -153,11 +158,21 @@ class LatentSpacePrediction:
         task_latent, task_returns = self.latent_map(vae.rollout_storage, encoder)
 
         # sample target task embedding
-        target_episode_latent_means, target_episode_latent_logvars, _, _, _, _, _ = sample_trajectory(env, policy,
-                                                                                                      encoder,
-                                                                                                      self.target)
-        target_means, target_logvars = trajectory_embedding(target_episode_latent_means,
-                                                            target_episode_latent_logvars)
+        for i in range(self.num_target_sample):
+            target_episode_latent_means, target_episode_latent_logvars, _, _, _, _, target_return = sample_trajectory(
+                env,
+                policy,
+                encoder,
+                self.target)
+            if target_return > self.target_return:
+                print(f'target return update: {self.target_return}->{target_return}')
+                self.target_return = target_return
+                self.target_episode_latent_means = target_episode_latent_means
+                self.target_episode_latent_logvars = target_episode_latent_logvars
+
+        self.target_return = -np.inf  # reset
+        target_means, target_logvars = trajectory_embedding(self.target_episode_latent_means,
+                                                            self.target_episode_latent_logvars)
         # target_latent = self._sample_gaussian(target_means, target_logvars)
         target_latent = target_means
 

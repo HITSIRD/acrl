@@ -39,22 +39,23 @@ def plot_performance(log_dir):
 
     ax = plt.gca()
     lines = []
-    lines.append(add_plot(log_dir + 'ppo_ACRL_EBU_RATIO=0.01_ACRL_LAMBDA=0', ax, 'C0'))
-    lines.append(add_plot(log_dir + 'ppo_ACRL_EBU_RATIO=0.25_ACRL_LAMBDA=0', ax, 'C1'))
-    lines.append(add_plot(log_dir + 'ppo_ACRL_EBU_RATIO=0.5_ACRL_LAMBDA=0', ax, 'C2'))
-    lines.append(add_plot(log_dir + 'ppo_ACRL_EBU_RATIO=0.75_ACRL_LAMBDA=0', ax, 'C3'))
-    lines.append(add_plot(log_dir + 'ppo_ACRL_EBU_RATIO=1.0_ACRL_LAMBDA=0', ax, 'C4'))
-    lines.append(add_plot(log_dir + 'ppo_ACRL_EBU_RATIO=0_ACRL_LAMBDA=0.25', ax, 'C5'))
-    lines.append(add_plot(log_dir + 'ppo_ACRL_EBU_RATIO=0_ACRL_LAMBDA=0.5', ax, 'C6'))
-    lines.append(add_plot(log_dir + 'ppo_ACRL_EBU_RATIO=0_ACRL_LAMBDA=0.75', ax, 'C7'))
-    lines.append(add_plot(log_dir + 'ppo_ACRL_EBU_RATIO=0_ACRL_LAMBDA=1.0', ax, 'C8'))
+    lines.append(add_plot(log_dir + 'ppo_ACRL_LAMBDA=0.0', ax, 'C0'))
+    lines.append(add_plot(log_dir + 'ppo_ACRL_LAMBDA=0.1', ax, 'C1'))
+    lines.append(add_plot(log_dir + 'ppo_ACRL_LAMBDA=0.2', ax, 'C2'))
+    lines.append(add_plot(log_dir + 'ppo_ACRL_LAMBDA=0.25', ax, 'C3'))
+    lines.append(add_plot(log_dir + 'ppo_ACRL_LAMBDA=0.3', ax, 'C4'))
+    lines.append(add_plot(log_dir + 'ppo_ACRL_LAMBDA=0.4', ax, 'C5'))
+    lines.append(add_plot(log_dir + 'ppo_ACRL_LAMBDA=0.5', ax, 'C6'))
+    lines.append(add_plot(log_dir + 'ppo_ACRL_LAMBDA=0.6', ax, 'C7'))
+    lines.append(add_plot(log_dir + 'ppo_ACRL_LAMBDA=0.75', ax, 'C8'))
+    lines.append(add_plot(log_dir + 'ppo_ACRL_LAMBDA=1.0', ax, 'C9'))
 
     # ax.tickabel_format(style='sci', scilimits=(-1, 2), axis='x')
     # ax.get_xaxis().get_offset_text().set(va='bottom', ha='left')
     # ax.xaxis.get_offet_text.set_fontsize(15)
     fig.legend(lines,
-               ['$\lambda=0$', 'EBU $\lambda=0.25$', 'EBU $\lambda=0.5$', 'EBU $\lambda=0.75$', 'EBU $\lambda=1.0$',
-                'LSP $\lambda=0.25$', 'LSP $\lambda=0.5$', 'LSP $\lambda=0.75$', 'LSP $\lambda=1.0$'],
+               ['$\lambda=0$', '$\lambda=0.1$', '$\lambda=0.2$', '$\lambda=0.25$', '$\lambda=0.3$',
+                '$\lambda=0.4$', '$\lambda=0.5$', '$\lambda=0.6$', '$\lambda=0.75$', '$\lambda=1.0$'],
                fontsize=12, loc='right')
 
     plt.xlabel('Train Steps ($\\times 10^6$)', size=FONT_SIZE)
@@ -70,12 +71,12 @@ def plot_performance(log_dir):
     plt.grid()
 
     plt.tight_layout()
-    plt.savefig('figures/u_maze_ablation.pdf')
+    plt.savefig('./figures/u_maze/ablation.pdf')
     # plt.show()
 
 
 if __name__ == "__main__":
-    os.makedirs("../figures", exist_ok=True)
+    os.makedirs("./figures/u_maze", exist_ok=True)
     # base_log_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "logs")
-    base_log_dir = "/home/wenyongyan/文档/currot-icml_副本/logs/u_maze/acrl/"
+    base_log_dir = "./logs/u_maze/acrl/"
     plot_performance(base_log_dir)

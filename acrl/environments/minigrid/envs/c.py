@@ -78,7 +78,7 @@ class CEnv(MiniGridEnv):
 
     def __init__(self, size=12, max_steps: int | None = None, **kwargs):
         if max_steps is None:
-            max_steps = 200
+            max_steps = 100
 
         self.task_dim = 4
         self.num_possible_goals = 0

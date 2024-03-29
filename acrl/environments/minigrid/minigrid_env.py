@@ -590,7 +590,7 @@ class MiniGridEnv(gym.Env):
                     self.carrying.cur_pos = np.array([-1, -1])
                     self.grid.set(fwd_pos[0], fwd_pos[1], None)
                     if self.count == 0:
-                        reward = 0.5 * self._reward()
+                        # reward = 0.5 * self._reward()
                         # reward = 0.5
                         self.count += 1
 
@@ -607,7 +607,7 @@ class MiniGridEnv(gym.Env):
                 fwd_cell.toggle(self, fwd_pos)
                 if fwd_cell.type == 'Door' and self.door_count == 0:
                     # reward = 0.5 * self._reward()
-                    reward = 0.25
+                    # reward = 0.25
                     self.door_count = 0
 
         # Done action (not used by default)

@@ -8,7 +8,7 @@ config = {
     'task_buffer_size': 50,
     'lambda': 0.25,  # LSP ratio
     'ebu_ratio': 0,  # EBU ratio
-    'noise_std': [0.5, 0.5],
+    'noise_std': [0.5, 0.5, 0.5, 0.5],
     'add_noise': True,
     'enable_latent_selection_sample': True,
     # 'num_test': 20,

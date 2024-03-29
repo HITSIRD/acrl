@@ -24,6 +24,7 @@ plt.rcParams.update({
 FONT_SIZE = 15
 TICK_SIZE = 6
 
+
 def performance_plot(ax=None, path=None, base_log_dir="logs", acrl_lambda=0.5):
     if ax is None:
         f = plt.figure(figsize=(4.5, 3))
@@ -46,11 +47,11 @@ def performance_plot(ax=None, path=None, base_log_dir="logs", acrl_lambda=0.5):
     ax.set_ylabel(r"Episodic Return", fontsize=FONT_SIZE, labelpad=2.)
     ax.set_xlabel(r"Train Steps ($\times 10^3$)", fontsize=FONT_SIZE, labelpad=2.)
 
-    # if show:
-    #     ax.legend(lines,
-    #               [r"\sprl", "Random", "Default", "CURROT", "Goal GAN", "ALP-GMM", r"\acl", "PLR", "VDS",
-    #                "ACRL (ours)"],
-    #               fontsize=11, loc='upper left')
+    if show:
+        ax.legend(lines,
+                  [r"\sprl", "Random", "Default", "CURROT", "Goal GAN", "ALP-GMM", r"\acl", "PLR", "VDS",
+                   "ACRL (ours)"],
+                  fontsize=11, loc='upper left')
 
     ax.set_xticks([0, 40, 80, 120, 160, 200])
     ax.set_xticklabels([r"$0$", r"$100$", r"$200$", r"$30$", r"$400$", r"500"])
@@ -79,6 +80,7 @@ if __name__ == "__main__":
     os.makedirs("./figures/minigrid_b", exist_ok=True)
     # base_log_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "logs")
     base_log_dir = "./logs"
-    acrl_lambda = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
-    for i in acrl_lambda:
-        performance_plot(path='./figures/minigrid_b/' + str(i) + '.pdf', base_log_dir=base_log_dir, acrl_lambda=i)
+    # acrl_lambda = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    acrl_lambda = 0.25
+    performance_plot(path='./figures/minigrid_b/' + str(acrl_lambda) + '.pdf', base_log_dir=base_log_dir,
+                     acrl_lambda=acrl_lambda)
