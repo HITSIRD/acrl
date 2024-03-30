@@ -68,7 +68,7 @@ def sample_trajectory(env, policy, encoder, task):
     for step_idx in range(0, max_steps):
         episode_prev_obs.append(prev_state_wo_context)
         with torch.no_grad():
-            action, _, _ = policy(prev_state)
+            action, _, _ = policy(prev_state)  # TODO: SAC policy needs 3 parameters
         # action = action.view((1, *action.shape))
         action = action.squeeze(0).cpu()
 
@@ -107,27 +107,32 @@ def sample_trajectory(env, policy, encoder, task):
 
 
 def get_latent_map(buffer, encoder):
-    episode_latent_samples = []
+    # episode_latent_samples = []
     latent_means = []
     latent_logvars = []
+    episode_return = []
 
-    for i in range(buffer.max_buffer_size):
+    for i in range(buffer.buffer_len):
+        if buffer.trajectory_lens[i] <= 1:
+            continue
         episode_latent_means = []
         episode_latent_logvars = []
-        for j in range(buffer.trajectory_lens[i]):
-            curr_latent_sample, curr_latent_mean, curr_latent_logvar = encoder(
-                prev_states=buffer.prev_state[i][j].to(device),
-                actions=buffer.action[i][j].to(device),
-                rewards=buffer.reward[i][j].to(device),
-                next_states=buffer.next_state[i][j].to(device),
-                tasks=buffer.task[i].to(device))
+        episode_return.append(buffer.episode_return[i])
+        # for j in range(buffer.trajectory_lens[i]):
+        curr_latent_sample, curr_latent_mean, curr_latent_logvar = encoder(
+            prev_states=buffer.prev_state[i][:buffer.trajectory_lens[i]].to(device),
+            actions=buffer.action[i][:buffer.trajectory_lens[i]].to(device),
+            rewards=buffer.reward[i][:buffer.trajectory_lens[i]].to(device),
+            next_states=buffer.next_state[i][:buffer.trajectory_lens[i]].to(device),
+            tasks=buffer.task[i].to(device))
 
-            episode_latent_samples.append(curr_latent_sample.clone())
-            episode_latent_means.append(curr_latent_mean.clone())
-            episode_latent_logvars.append(curr_latent_logvar.clone())
+        # episode_latent_samples.append(curr_latent_sample.clone())
+        episode_latent_means.append(curr_latent_mean.clone())
+        episode_latent_logvars.append(curr_latent_logvar.clone())
 
-        mean, logvar = trajectory_embedding(episode_latent_means, episode_latent_logvars)
+        # mean, logvar = trajectory_embedding(episode_latent_means, episode_latent_logvars)
+        mean, logvar = trajectory_embedding(curr_latent_mean, curr_latent_logvar)
         latent_means.append(mean)
         latent_logvars.append(logvar)
 
-    return latent_means, latent_logvars
+    return latent_means, latent_logvars, np.array(episode_return)

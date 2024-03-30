@@ -9,7 +9,7 @@ config = {
     'lambda': 0.2,  # LSP ratio
     'ebu_ratio': 0,  # EBU ratio
     'noise_std': [1.0, 1.0],
-    'add_noise': True,
+    'add_noise': False,
     'update_freq': 1000,
     'encoder_max_grad_norm': None,
     'decoder_max_grad_norm': None,

@@ -19,7 +19,7 @@ from acrl.teachers.sampler import Subsampler
 from scipy.stats import multivariate_normal
 from acrl.util.device import device_type
 
-from acrl.teachers.acrl.config.u_maze import config
+from acrl.teachers.acrl.config.ant_maze import config
 
 os.environ[
     'LD_LIBRARY_PATH'] = '$LD_LIBRARY_PATH:/home/wenyongyan/.mujoco/mujoco210/bin:$LD_LIBRARY_PATH:/usr/lib/nvidia'
@@ -213,7 +213,7 @@ class AntMazeExperiment(AbstractExperiment):
     def evaluate_learner(self, path):
         model_load_path = os.path.join(path, "model.zip")
         model = self.learner.load_for_evaluation(model_load_path, self.vec_eval_env)
-        for i in range(0, 1):
+        for i in range(0, 30):
             obs = self.vec_eval_env.reset()
             done = False
             while not done:

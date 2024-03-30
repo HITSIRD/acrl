@@ -39,7 +39,8 @@ class GoalWrapper(Wrapper):
         else:
             self.goal_dim = goal_low.size
         print("goal_dim in create_maze", self.goal_dim)
-        self.distance_threshold = 1.5
+        # self.distance_threshold = 1.5
+        self.distance_threshold = 1.0
         print("distance threshold in create_maze", self.distance_threshold)
 
         # self.observation_space = gym.spaces.Dict(OrderedDict({

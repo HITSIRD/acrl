@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from typing import Tuple, NoReturn
 import torch
 
-from acrl.environments.minigrid.envs import AEnv, BEnv, CEnv
+from acrl.environments.minigrid.envs import AEnv
 from acrl.teachers.abstract_teacher import AbstractTeacher
 from acrl.teachers.acrl.util import sample_trajectory, trajectory_embedding, get_latent_map
 from acrl.teachers.acrl.vae import VAE
@@ -140,7 +140,7 @@ class LatentSpacePrediction:
         if buffer is None:
             buffer = self.current_tasks
 
-        context = self.current_tasks[np.random.randint(len(buffer))] if np.random.random() > 0.1 else self.target
+        context = self.current_tasks[np.random.randint(len(buffer))] if np.random.random() > 0.05 else self.target
         # context = self.current_tasks[np.random.randint(len(buffer))]
 
         if isinstance(context, torch.Tensor):
@@ -246,8 +246,8 @@ class LatentSpacePrediction:
             self.ls_tasks = ls_task
 
     def latent_map(self, buffer, encoder):
-        latent_means, latent_logvars = get_latent_map(buffer, encoder)
-        return latent_means, buffer.episode_return
+        latent_means, latent_logvars, episode_return = get_latent_map(buffer, encoder)
+        return latent_means, episode_return
 
     def _sample_gaussian(self, mu, std, num=None):
         if num is None:

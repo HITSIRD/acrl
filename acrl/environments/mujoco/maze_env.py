@@ -257,6 +257,8 @@ class MazeEnv(gym.Env):
         self.init_row_r = contain_r.index(1)
         self.init_col_r = self.MAZE_STRUCTURE[self.init_row_r].index("r")
 
+        os.remove(file_path)  # remove tmp file
+
     def get_ori(self):
         return self.wrapped_env.get_ori()
 
@@ -623,12 +625,11 @@ class MazeEnv(gym.Env):
 
         if self.goal is not None:
             # print(self.EPS, next_obs[:2], self.goal[:2])
-            done = bool(((next_obs[:2] - self.goal[:2]) ** 2).sum() < 1.5)
-            # done = bool(((next_obs[:2] - self.goal[:2]) ** 2).sum() < 1.0)
+            # done = bool(((next_obs[:2] - self.goal[:2]) ** 2).sum() < 1.5)
+            done = bool(((next_obs[:2] - self.goal[:2]) ** 2).sum() < 1.0)
             inner_reward = int(done)
 
         if enable_render:
             self.render()
-            # time.sleep(0.1)
 
         return next_obs, inner_reward, done, info
