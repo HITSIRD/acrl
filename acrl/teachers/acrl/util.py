@@ -55,7 +55,7 @@ def sample_trajectory(env, policy, encoder, task):
     episode_latent_logvars = []
 
     # --- roll out policy ---
-    prev_state, prev_state_wo_context = env.reset(task, with_context=True)
+    prev_state, prev_state_wo_context = env.reset(task, wo_context=True)
     prev_state = torch.from_numpy(prev_state).unsqueeze(0).float().to(device)
     prev_state_wo_context = torch.from_numpy(prev_state_wo_context).float().to(device)
     task = torch.tensor(task).float()
@@ -73,7 +73,7 @@ def sample_trajectory(env, policy, encoder, task):
         action = action.squeeze(0).cpu()
 
         # observe reward and next obs
-        next_state_wo_context, next_state, rew_raw, done, info = env.step(action, update=False, with_context=True,
+        next_state_wo_context, next_state, rew_raw, done, info = env.step(action, update=False, wo_context=True,
                                                                           insert=False)
 
         next_state = torch.from_numpy(next_state).unsqueeze(0).to(device)
@@ -111,6 +111,7 @@ def get_latent_map(buffer, encoder):
     latent_means = []
     latent_logvars = []
     episode_return = []
+    tasks = []
 
     for i in range(buffer.buffer_len):
         if buffer.trajectory_lens[i] <= 1:
@@ -134,5 +135,6 @@ def get_latent_map(buffer, encoder):
         mean, logvar = trajectory_embedding(curr_latent_mean, curr_latent_logvar)
         latent_means.append(mean)
         latent_logvars.append(logvar)
+        tasks.append(buffer.task[i])
 
-    return latent_means, latent_logvars, np.array(episode_return)
+    return latent_means, latent_logvars, tasks, np.array(episode_return)

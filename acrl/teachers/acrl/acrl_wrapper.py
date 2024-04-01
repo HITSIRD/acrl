@@ -19,7 +19,7 @@ class ACRLWrapper(BaseWrapper):
         ins, cons, disc_rews = self.context_buffer.read_buffer()
         return np.array(ins), np.array(cons), np.array(disc_rews)
 
-    def reset(self, context=None, with_context=False):
+    def reset(self, context=None, wo_context=False):
         if context is None:
             self.cur_context = self.teacher.sample()
         else:
@@ -38,12 +38,12 @@ class ACRLWrapper(BaseWrapper):
         self.last_obs = obs.copy()
         self.last_obs_wo_context = obs_wo_context
         self.cur_initial_state = obs.copy()
-        if not with_context:
+        if not wo_context:
             return obs
         else:
             return obs, obs_wo_context
 
-    def step(self, action, update=True, with_context=False, insert=True):
+    def step(self, action, update=True, wo_context=False, insert=True):
         step = self.env.step(action)
         current_step = step[0], action, step[1], self.last_obs_wo_context, self.cur_context
         done = step[2]
@@ -51,7 +51,7 @@ class ACRLWrapper(BaseWrapper):
         self.last_obs_wo_context = step[0].copy()
 
         # step = np.concatenate((step[0], self.env.unwrapped.context)), step[1], step[2], step[3]
-        if with_context:
+        if wo_context:
             step = step[0], np.concatenate((step[0], self.cur_context)), step[1], step[2], step[3]
         else:
             step = np.concatenate((step[0], self.cur_context)), step[1], step[2], step[3]
@@ -61,7 +61,7 @@ class ACRLWrapper(BaseWrapper):
         if insert:
             self.teacher.vae.rollout_storage.insert(step=current_step, done=done)
         if update:
-            assert with_context is False
+            assert wo_context is False
             self.update(step)
         return step
 

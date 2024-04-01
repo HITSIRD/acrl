@@ -7,11 +7,9 @@ config = {
     'update_delta': 0.5,  # if mean of return > update_delta, then update context dist
     'task_buffer_size': 256,
     'lambda': 0.25,  # LSP ratio
-    'ebu_ratio': 0,  # EBU ratio
     'noise_std': [0.5, 0.5],
-    'add_noise': False,
     'enable_latent_selection_sample': True,
-    # 'num_test': 20,
+    'num_target_samples': 20,
     'update_freq': 500,
     'encoder_max_grad_norm': None,
     'decoder_max_grad_norm': None,

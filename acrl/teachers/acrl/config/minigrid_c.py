@@ -11,7 +11,7 @@ config = {
     'noise_std': [0.5, 0.5, 0.5, 0.5],
     'add_noise': True,
     'enable_latent_selection_sample': True,
-    # 'num_test': 20,
+    'num_target_samples': 20,
     'update_freq': 1000,
     'encoder_max_grad_norm': None,
     'decoder_max_grad_norm': None,
