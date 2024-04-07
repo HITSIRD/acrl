@@ -50,19 +50,19 @@ class ACRL(AbstractTeacher):
             print(f'mean of return: {np.mean(ret)}({np.std(ret)})')
 
             #  evaluate current policy
-            if hasattr(env.env, 'plot_evaluate_task'):
-                print('plot_evaluate_task...')
-                env.env.plot_evaluate_task(env, self.policy, self.vae.transition_encoder, episode_count, self.log_dir)
+            # if hasattr(env.env, 'plot_evaluate_task'):
+            #     print('plot_evaluate_task...')
+            #     env.env.plot_evaluate_task(env, self.policy, self.vae.transition_encoder, episode_count, self.log_dir)
 
             if np.mean(ret) > self.config['update_delta']:
                 #  plot
-                if isinstance(env.env, AEnv):
-                    print('plot_latent_cluster...')
-                    env.env.plot_latent_cluster(env, self.policy, episode_count, self.teacher,
-                                                self.vae.transition_encoder,
-                                                self.vae.task_decoder, self.log_dir)
-                    print('plot_dist...')
-                    env.env.plot_dist(episode_count, self.teacher, self.log_dir)
+                # if isinstance(env.env, AEnv):
+                #     print('plot_latent_cluster...')
+                #     env.env.plot_latent_cluster(env, self.policy, episode_count, self.teacher,
+                #                                 self.vae.transition_encoder,
+                #                                 self.vae.task_decoder, self.log_dir)
+                #     print('plot_dist...')
+                #     env.env.plot_dist(episode_count, self.teacher, self.log_dir)
 
                 for _ in range(self.config['num_vae_update']):
                     self.vae.compute_vae_loss(update=True)
@@ -136,16 +136,17 @@ class LatentSpacePrediction:
         #                                               range(index)])
         # else:
         self.current_tasks = [self._sample_gaussian(self.init_mean, self.init_std) for i in
-                                  range(self.buffer_size)]
+                              range(self.buffer_size)]
 
     def sample(self, buffer=None):
         if buffer is None:
             buffer = self.current_tasks
 
-        if np.random.random() < 0.05:
-            context = self.target
+        if np.random.random() > 0.05:
+            context = self.current_tasks[
+                np.random.randint(len(buffer))] if np.random.random() < self.update_lambda else self.uniform_sampler()
         else:
-            context = self.current_tasks[np.random.randint(len(buffer))] if np.random.random() < self.update_lambda else self.uniform_sampler()
+            context = self.target
         # context = self.current_tasks[np.random.randint(len(buffer))]
 
         if isinstance(context, torch.Tensor):
@@ -155,6 +156,7 @@ class LatentSpacePrediction:
         return context
 
     def update(self, env, policy, vae):
+        return
         print('updating task dist...')
         encoder = vae.transition_encoder
         task_decoder = vae.task_decoder
@@ -170,6 +172,7 @@ class LatentSpacePrediction:
                 encoder,
                 self.target)
             target_returns.append(target_return)
+            # print(target_return)
             if target_return > self.target_return:
                 print(f'target return update: {self.target_return}->{target_return}')
                 self.target_return = target_return
@@ -186,6 +189,7 @@ class LatentSpacePrediction:
 
         task_latent = torch.stack(task_latent)
         task_returns = torch.from_numpy(np.array(task_returns)).cpu().numpy().flatten()
+        # index = np.argwhere((task_returns > self.return_delta) & (task_returns < -20)).flatten()
         index = np.argwhere(task_returns > self.return_delta).flatten()
         if index.shape[0] == 0:
             print('nothing to update')
@@ -200,7 +204,7 @@ class LatentSpacePrediction:
             self.EBU_update(sampled_tasks, index, latent_index)
 
         if self.enable_lsp and convert:
-           self.LSP_update(task_latent, target_latent, latent_index, task_decoder)
+            self.LSP_update(task_latent, target_latent, latent_index, task_decoder)
 
         self.curriculum_index += 1
         # print(self.current_tasks.view(-1, self.current_tasks.shape[0] // 16,
@@ -230,7 +234,7 @@ class LatentSpacePrediction:
         sampled_tasks = sampled_tasks[index]
         ls_task = []
         for i in range(index.shape[0]):
-            s_i = min(int(np.random.exponential(2.0)), index.shape[0])
+            s_i = min(int(np.random.exponential(1.0)), index.shape[0])
             # print(sampled_tasks[latent_index[s_i]])
             noise = self.task_noise_std * torch.randn(size=sampled_tasks[i].shape).to(device)
             ls_task.append(sampled_tasks[latent_index[s_i]] + noise)

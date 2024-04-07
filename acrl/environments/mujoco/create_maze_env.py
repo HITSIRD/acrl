@@ -10,7 +10,7 @@ from gym.envs.registration import EnvSpec
 
 
 class GoalWrapper(Wrapper):
-    def __init__(self, env, maze_size_scaling, random_start, low, high, fix_goal=True, top_down=False, test=None):
+    def __init__(self, env, maze_size_scaling, random_start, low, high, fix_goal=True, top_down=False, test=None, goal_obs=False):
         super(GoalWrapper, self).__init__(env)
         ob_space = env.observation_space
         self.maze_size_scaling = maze_size_scaling
@@ -116,6 +116,8 @@ class GoalWrapper(Wrapper):
         if self.top_down:
             mask = np.array([0.0] * 2 + [1.0] * (observation.shape[0] - 2))
             observation = observation * mask
+
+        # reward = -distance * 0.1 + reward
         return observation, reward, done, info
 
     def reset(self, **kwargs):

@@ -6,6 +6,7 @@ from acrl.teachers.util import Buffer
 from stable_baselines3.common.vec_env.base_vec_env import VecEnv, CloudpickleWrapper
 from stable_baselines3.common.vec_env.subproc_vec_env import SubprocVecEnv, _flatten_obs
 from stable_baselines3.common.running_mean_std import RunningMeanStd
+from gym.spaces import Dict
 
 
 class AbstractTeacher(ABC):
@@ -40,6 +41,9 @@ class BaseWrapper(gym.Env):
             if context_post_processing is not None:
                 context = context_post_processing(context)
 
+            if isinstance(self.env.observation_space, Dict):
+                self.env.observation_space = self.env.observation_space['observation']
+
             low_ext = np.concatenate((self.env.observation_space.low, -np.inf * np.ones_like(context)))
             high_ext = np.concatenate((self.env.observation_space.high, np.inf * np.ones_like(context)))
             self.observation_space = gym.spaces.Box(low=low_ext, high=high_ext)
@@ -68,8 +72,12 @@ class BaseWrapper(gym.Env):
 
     def step(self, action):
         step = self.env.step(action)
+        obs = step[0]
+        if isinstance(step[0], dict):
+            obs = step[0]['observation']
+
         if self.context_visible:
-            step = np.concatenate((step[0], self.processed_context)), step[1], step[2], step[3]
+            step = np.concatenate((obs, self.processed_context)), step[1], step[2], step[3]
         self.update(step)
         return step
 
@@ -84,6 +92,9 @@ class BaseWrapper(gym.Env):
         # WARNING, MAKE SURE THE UNWRAPPED ENV IS SET CORRECTLY
         # self.env.context = self.processed_context.copy()
         obs = self.env.reset(context=self.processed_context.copy())
+        if isinstance(obs, dict):
+            self.processed_context = obs['desired_goal']
+            obs = obs['observation']
 
         if self.context_visible:
             obs = np.concatenate((obs, self.processed_context))

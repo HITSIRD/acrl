@@ -315,7 +315,7 @@ class VAE:
 
         # get a mini-batch
         vae_prev_obs, vae_actions, vae_rewards, vae_next_obs, vae_tasks, trajectory_lens = self.rollout_storage.get_batch(
-            batchsize=self.config['vae_batch_num_trajectories'])
+            batchsize=self.config['vae_batch_num_trajectories'], return_delta=self.config['return_delta'])
 
         _, latent_mean, latent_logvar = self.transition_encoder(prev_states=vae_prev_obs,
                                                                 actions=vae_actions,
@@ -498,7 +498,13 @@ class RolloutStorageVAE(object):
 
     def get_batch(self, batchsize=5, replace=False, return_delta=0):
         batchsize = min(self.buffer_len, batchsize)
-        rollout_indices = np.random.choice(range(self.buffer_len), batchsize, replace=replace)
+        index = np.argwhere(self.episode_return > return_delta).flatten()
+        # assert index.size > 0
+        size = min(len(index), batchsize)
+        if index.size > 0:
+            rollout_indices = index[np.random.choice(len(index), size, replace=replace)]
+        else:
+            rollout_indices = np.random.choice(self.buffer_len, batchsize, replace=replace)
 
         trajectory_lens = self.trajectory_lens[rollout_indices]
         max_lens = np.max(trajectory_lens)

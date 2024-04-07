@@ -40,22 +40,19 @@ def plot_performance(log_dir):
     ax = plt.gca()
     lines = []
     lines.append(add_plot(log_dir + 'ppo_ACRL_LAMBDA=0.0', ax, 'C0'))
-    lines.append(add_plot(log_dir + 'ppo_ACRL_LAMBDA=0.1', ax, 'C1'))
-    lines.append(add_plot(log_dir + 'ppo_ACRL_LAMBDA=0.2', ax, 'C2'))
-    lines.append(add_plot(log_dir + 'ppo_ACRL_LAMBDA=0.25', ax, 'C3'))
-    lines.append(add_plot(log_dir + 'ppo_ACRL_LAMBDA=0.3', ax, 'C4'))
-    lines.append(add_plot(log_dir + 'ppo_ACRL_LAMBDA=0.4', ax, 'C5'))
-    lines.append(add_plot(log_dir + 'ppo_ACRL_LAMBDA=0.5', ax, 'C6'))
-    lines.append(add_plot(log_dir + 'ppo_ACRL_LAMBDA=0.6', ax, 'C7'))
-    lines.append(add_plot(log_dir + 'ppo_ACRL_LAMBDA=0.75', ax, 'C8'))
-    lines.append(add_plot(log_dir + 'ppo_ACRL_LAMBDA=1.0', ax, 'C9'))
+    lines.append(add_plot(log_dir + 'ppo_ACRL_LAMBDA=0.25', ax, 'C1'))
+    lines.append(add_plot(log_dir + 'ppo_ACRL_LAMBDA=0.5', ax, 'C2'))
+    lines.append(add_plot(log_dir + 'ppo_ACRL_LAMBDA=0.75', ax, 'C3'))
+    lines.append(add_plot(log_dir + 'ppo_ACRL_LAMBDA=1.0', ax, 'C4'))
+    lines.append(add_plot(log_dir + 'ppo_ACRL_LAMBDA=0.5_wo_LSP', ax, 'C5'))
+    lines.append(add_plot(log_dir + 'ppo_ACRL_LAMBDA=0.5_wo_EBU', ax, 'C6'))
 
     # ax.tickabel_format(style='sci', scilimits=(-1, 2), axis='x')
     # ax.get_xaxis().get_offset_text().set(va='bottom', ha='left')
     # ax.xaxis.get_offet_text.set_fontsize(15)
     fig.legend(lines,
-               ['$\lambda=0$', '$\lambda=0.1$', '$\lambda=0.2$', '$\lambda=0.25$', '$\lambda=0.3$',
-                '$\lambda=0.4$', '$\lambda=0.5$', '$\lambda=0.6$', '$\lambda=0.75$', '$\lambda=1.0$'],
+               ['$\lambda=0$', '$\lambda=0.25$', '$\lambda=0.5$', '$\lambda=0.75$', '$\lambda=1.0$',
+                'w/o LSP', 'w/o EBU'],
                fontsize=12, loc='right')
 
     plt.xlabel('Train Steps ($\\times 10^6$)', size=FONT_SIZE)

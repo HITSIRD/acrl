@@ -182,7 +182,7 @@ class MinigridCExperiment(AbstractExperiment):
             env.teacher.initialize_teacher(env, interface, state_provider)
 
         if isinstance(env, ACRLWrapper):
-            env.teacher.set_policy(model.policy)
+            env.teacher.set_policy(model)
 
         callback_params = {"learner": interface, "env_wrapper": env, "save_interval": 5,
                            "step_divider": self.STEPS_PER_ITER}

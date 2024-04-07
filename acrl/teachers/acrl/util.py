@@ -68,9 +68,9 @@ def sample_trajectory(env, policy, encoder, task):
     for step_idx in range(0, max_steps):
         episode_prev_obs.append(prev_state_wo_context)
         with torch.no_grad():
-            action, _, _ = policy(prev_state)  # TODO: SAC policy needs 3 parameters
+            action = policy.predict(prev_state, deterministic=False)[0]  # TODO: SAC policy needs 3 parameters
         # action = action.view((1, *action.shape))
-        action = action.squeeze(0).cpu()
+        action = torch.from_numpy(action).squeeze(0)
 
         # observe reward and next obs
         next_state_wo_context, next_state, rew_raw, done, info = env.step(action, update=False, wo_context=True,

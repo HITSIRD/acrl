@@ -37,13 +37,12 @@ class MazeEnv(gym.Env):
             top_down_view=False,
             manual_collision=False,
             goal=None,
-            context=None,
+            context=[1, 1],
             *args,
             **kwargs):
         self._maze_id = maze_id
         print("maze id in maze_env.py:", self._maze_id, "!!!")
 
-        self.context = context
         self.goal = context
 
         model_cls = self.__class__.MODEL_CLASS
@@ -444,6 +443,10 @@ class MazeEnv(gym.Env):
         if self._top_down_view:
             view = self.get_top_down_view().flatten()
             wrapped_obs = np.concatenate((wrapped_obs, view))
+
+        # if slef._goal_obs:
+        #     goal_vec = np.array(self.goal) - self.wrapped_env.get_xy()
+        #     wrapped_obs = np.concatenate((wrapped_obs, view))
 
         return wrapped_obs
 

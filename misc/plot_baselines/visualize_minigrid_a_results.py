@@ -81,6 +81,6 @@ if __name__ == "__main__":
     os.makedirs("./figures/minigrid_a", exist_ok=True)
     # base_log_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "logs")
     base_log_dir = "./logs"
-    acrl_lambda = 0.25
+    acrl_lambda = 0.75
     performance_plot(path='./figures/minigrid_a/' + str(acrl_lambda) + '.pdf', base_log_dir=base_log_dir,
                      acrl_lambda=acrl_lambda)

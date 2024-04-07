@@ -30,9 +30,9 @@ register(
     kwargs={"size": 16},
 )
 
-
 robots = ['Point', 'Ant', 'Swimmer']
-task_types = ['Maze', 'Maze1', 'Push', 'Fall', 'Block', 'BlockMaze']
+# task_types = ['Maze', 'Maze1', 'Maze2', 'Push', 'Fall', 'Block', 'BlockMaze']
+task_types = ['Maze', 'Maze1', 'Maze2']
 all_name = [x + y for x in robots for y in task_types]
 random_start = False
 
@@ -45,8 +45,10 @@ top_down = True
 
 for name_t in all_name:
     # episode length
-    if name_t == "AntMaze":
+    if name_t == "AntMaze" or name_t == "AntMaze1" or name_t == "AntMaze2":
         max_timestep = 1000
+        top_down = False
+        goal_obs = True
     else:
         max_timestep = 100
     for Test in ['', 'Test', 'Test1', 'Test2']:

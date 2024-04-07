@@ -182,7 +182,7 @@ class UMazeExperiment(AbstractExperiment):
             env.teacher.initialize_teacher(env, interface, state_provider)
 
         if isinstance(env, ACRLWrapper):
-            env.teacher.set_policy(model.policy)
+            env.teacher.set_policy(model)
 
         callback_params = {"learner": interface, "env_wrapper": env, "save_interval": 5,
                            "step_divider": self.STEPS_PER_ITER}
@@ -209,11 +209,13 @@ class UMazeExperiment(AbstractExperiment):
     def evaluate_learner(self, path):
         model_load_path = os.path.join(path, "model.zip")
         model = self.learner.load_for_evaluation(model_load_path, self.vec_eval_env)
+        episode = np.zeros(30)
         for i in range(0, 30):
             obs = self.vec_eval_env.reset()
             done = False
             while not done:
                 action = model.step(obs, state=None, deterministic=False)
                 obs, rewards, done, infos = self.vec_eval_env.step(action)
-
+                episode[i] += rewards
+        # print(episode)
         return self.eval_env.get_statistics()[0]
