@@ -69,12 +69,14 @@ def sample_trajectory(env, policy, encoder, task):
         episode_prev_obs.append(prev_state_wo_context)
         with torch.no_grad():
             action = policy.predict(prev_state, deterministic=False)[0]  # TODO: SAC policy needs 3 parameters
-        # action = action.view((1, *action.shape))
-        action = torch.from_numpy(action).squeeze(0)
+        # action = torch.from_numpy(action).squeeze(0)
+        action = action.flatten()
 
         # observe reward and next obs
         next_state_wo_context, next_state, rew_raw, done, info = env.step(action, update=False, wo_context=True,
                                                                           insert=False)
+
+        action = torch.from_numpy(action).squeeze(0)
 
         next_state = torch.from_numpy(next_state).unsqueeze(0).to(device)
         next_state_wo_context = torch.from_numpy(next_state_wo_context).to(device)

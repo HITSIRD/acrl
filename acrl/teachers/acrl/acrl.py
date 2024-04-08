@@ -156,7 +156,6 @@ class LatentSpacePrediction:
         return context
 
     def update(self, env, policy, vae):
-        return
         print('updating task dist...')
         encoder = vae.transition_encoder
         task_decoder = vae.task_decoder

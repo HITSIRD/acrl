@@ -73,6 +73,9 @@ class BaseWrapper(gym.Env):
     def step(self, action):
         step = self.env.step(action)
         obs = step[0]
+        # print('achieved')
+        # print(obs['achieved_goal'])
+        # print(obs['desired_goal'])
         if isinstance(step[0], dict):
             obs = step[0]['observation']
 
@@ -136,7 +139,7 @@ class BaseWrapper(gym.Env):
             mean_reward = np.mean(rewards)
             mean_disc_reward = np.mean(disc_rewards)
             mean_step_length = np.mean(steps)
-            success_rate = len(np.where(np.array(rewards) > 0.8)[0]) / len(rewards)
+            success_rate = len(np.where(np.array(rewards) > -50)[0]) / len(rewards)
 
             return mean_reward, mean_disc_reward, mean_step_length, np.sum(steps), success_rate
 

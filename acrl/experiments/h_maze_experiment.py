@@ -2,7 +2,6 @@ import os
 import gym
 import torch
 import numpy as np
-from stable_baselines3.common.noise import NormalActionNoise
 from stable_baselines3.common.vec_env import DummyVecEnv
 
 from acrl.experiments.abstract_experiment import AbstractExperiment, Learner
@@ -19,11 +18,10 @@ from acrl.teachers.sampler import Subsampler
 from scipy.stats import multivariate_normal
 from acrl.util.device import device_type
 
-from acrl.teachers.acrl.config.ant_maze import config
-import acrl.environments.mujoco_maze
+from acrl.teachers.acrl.config.u_maze import config
 
 os.environ[
-    'LD_LIBRARY_PATH'] = '/home/wenyongyan/.mujoco/mujoco210/bin:/usr/lib/nvidia'
+    'LD_LIBRARY_PATH'] = '$LD_LIBRARY_PATH:/home/wenyongyan/.mujoco/mujoco210/bin:$LD_LIBRARY_PATH:/usr/lib/nvidia'
 
 # os.environ['LD_LIBRARY_PATH'] = '$LD_LIBRARY_PATH:/usr/lib/nvidia'
 os.environ['LD_PRELOAD'] = '/usr/lib/x86_64-linux-gnu/libGLEW.so'
@@ -35,17 +33,15 @@ def context_post_processing(context):
     return context
 
 
-class AntMazeExperiment(AbstractExperiment):
-    TARGET_MEANS = np.array([4., 0.])
+class HMazeExperiment(AbstractExperiment):
+    TARGET_MEANS = np.array([6., 0.])
     TARGET_VARIANCES = np.diag([1e-4, 1e-4])
 
-    # LOWER_CONTEXT_BOUNDS = np.array([-2., -2.])
     LOWER_CONTEXT_BOUNDS = np.array([-1., -1.])
-    # UPPER_CONTEXT_BOUNDS = np.array([10., 10.])
-    UPPER_CONTEXT_BOUNDS = np.array([5., 5.])
+    UPPER_CONTEXT_BOUNDS = np.array([9., 9.])
 
     def target_sampler(self, rng=None):
-        target = np.array([4., 0.])
+        target = np.array([6., 0.])
         return target
 
     def target_log_likelihood(self, cs):
@@ -56,7 +52,7 @@ class AntMazeExperiment(AbstractExperiment):
         # There is another factor of 0.5 since exactly half of the distribution is out of bounds
         return np.log(0.5 * 0.5 * (np.exp(p0 - pmax) + np.exp(p1 - pmax))) + pmax
 
-    INITIAL_MEAN = np.array([0., 2])
+    INITIAL_MEAN = np.array([0., 2.])
     INITIAL_VARIANCE = np.array([0.5, 0.5])
 
     STD_LOWER_BOUND = np.array([0.01, 0.01])
@@ -66,7 +62,7 @@ class AntMazeExperiment(AbstractExperiment):
     METRIC_EPS = 1.0
     EP_PER_UPDATE = 40
 
-    STEPS_PER_ITER = 100000
+    STEPS_PER_ITER = 5000
     DISCOUNT_FACTOR = 0.99
     LAM = 0.99
 
@@ -97,11 +93,10 @@ class AntMazeExperiment(AbstractExperiment):
     def __init__(self, base_log_dir, curriculum_name, learner_name, parameters, seed):
         super().__init__(base_log_dir, curriculum_name, learner_name, parameters, seed)
         self.eval_env, self.vec_eval_env = self.create_environment(evaluation=True)
-        self.env = gym.make('AntHMaze-v1')
+        self.env = gym.make('PointMaze2-v2')
 
     def create_environment(self, evaluation=False):
-        # env = gym.make('AntUMaze-v1', websock_port=7777)
-        env = gym.make('AntHMaze-v1')
+        env = gym.make('PointMaze2-v2')
 
         config['action_dim'] = env.action_space.shape[0]
         config['context_dim'] = self.INITIAL_MEAN.shape[0]
@@ -169,12 +164,10 @@ class AntMazeExperiment(AbstractExperiment):
                                 policy_kwargs=dict(net_arch=[128, 128, 128], activation_fn=torch.nn.Tanh)),
                     ppo=dict(n_steps=self.STEPS_PER_ITER, gae_lambda=self.LAM, batch_size=128),
                     sac=dict(learning_rate=3e-4, buffer_size=10000, learning_starts=500, batch_size=64,
-                             train_freq=5, target_entropy="auto"),
-                    td3=dict(batch_size=128, action_noise=NormalActionNoise(mean=np.array([0]), sigma=np.array([0.05])),
-                             target_policy_noise=0.1))
+                             train_freq=5, target_entropy="auto"))
 
     def create_experiment(self):
-        timesteps = 501 * self.STEPS_PER_ITER
+        timesteps = 201 * self.STEPS_PER_ITER
 
         env, vec_env = self.create_environment(evaluation=False)
         model, interface = self.learner.create_learner(vec_env, self.create_learner_params())
@@ -184,7 +177,7 @@ class AntMazeExperiment(AbstractExperiment):
 
         if isinstance(env, VDSWrapper):
             state_provider = lambda contexts: np.concatenate(
-                [np.repeat(np.ones(104, )[None, :], contexts.shape[0], axis=0),
+                [np.repeat(np.ones(81, )[None, :], contexts.shape[0], axis=0),
                  contexts], axis=-1)
             env.teacher.initialize_teacher(env, interface, state_provider)
 
@@ -211,15 +204,18 @@ class AntMazeExperiment(AbstractExperiment):
                           wb_max_reuse=1)
 
     def get_env_name(self):
-        return "ant_maze"
+        return "h_maze"
 
     def evaluate_learner(self, path):
         model_load_path = os.path.join(path, "model.zip")
         model = self.learner.load_for_evaluation(model_load_path, self.vec_eval_env)
-        for i in range(0, 1):
+        episode = np.zeros(30)
+        for i in range(0, 30):
             obs = self.vec_eval_env.reset()
             done = False
             while not done:
                 action = model.step(obs, state=None, deterministic=False)
                 obs, rewards, done, infos = self.vec_eval_env.step(action)
+                episode[i] += rewards
+        # print(episode)
         return self.eval_env.get_statistics()[0]

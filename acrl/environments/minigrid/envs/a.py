@@ -8,7 +8,7 @@ from matplotlib.colors import Normalize, ListedColormap
 # import utils.helpers
 from acrl.environments.minigrid.core.grid import Grid
 from acrl.environments.minigrid.core.mission import MissionSpace
-from acrl.environments.minigrid.core.world_object import Goal
+from acrl.environments.minigrid.core.world_object import Goal, Lava, Wall
 from acrl.environments.minigrid.minigrid_env import MiniGridEnv
 
 if torch.cuda.is_available():
@@ -18,8 +18,9 @@ if torch.cuda.is_available():
 else:
     device = torch.device('cpu')
 
-domain = [[1, 1], [6, 1], [6, 2], [6, 3], [6, 4], [6, 5], [6, 6], [6, 7]]
-# [3, 4], [3, 5], [4, 4], [4, 5], [5, 4], [5, 5], [7, 4], [7, 5], [3, 7], [3, 8], [4, 7], [4, 8]
+# domain = [[1, 1], [6, 1], [6, 2], [6, 3], [6, 4], [6, 5], [6, 6], [6, 7]]  #  original version
+domain = [[1, 1], [1, 4], [2, 4], [2, 7], [3, 4], [3, 7], [4, 6], [5, 1], [5, 2], [5, 3], [5, 4], [5, 5], [6, 3],
+          [6, 7], [6, 8], [7, 3], [7, 5], [8, 5]]
 
 plt.rc('text.latex')
 plt.rcParams.update({'text.usetex': True})
@@ -148,32 +149,31 @@ class AEnv(MiniGridEnv):
         # Create a vertical splitting wall
         # splitIdx = self._rand_int(2, width - 2)
         splitIdx = width // 2 + 1
-        self.grid.vert_wall(splitIdx, 1, self.height - 3)
+        # self.grid.vert_wall(splitIdx, 1, self.height - 3)
 
         # Place the agent at a random position and orientation
         # on the left side of the splitting wall
         # self.place_agent(top=(1, 1), size=(1, 1), rand_dir=False, agent_dir=task[4])
         self.place_agent(top=(init_pos_x, init_pos_y), size=(1, 1), rand_dir=False, agent_dir=agent_dir)
 
-        # Place a door in the wall
-        # doorIdx = self._rand_int(1, width - 2)
-        doorIdx = width - 2
-        # self.put_obj(Door("yellow", is_locked=False, is_open=False), splitIdx, doorIdx)
-        # self.put_obj(Lava(), 3, 7)
-        # self.put_obj(Lava(), 3, 8)
-        # self.put_obj(Lava(), 4, 7)
-        # self.put_obj(Lava(), 4, 8)
+        self.put_obj(Wall(), 2, 7)
+        self.put_obj(Wall(), 3, 7)
+        self.put_obj(Wall(), 4, 6)
+        self.put_obj(Wall(), 5, 1)
+        self.put_obj(Wall(), 5, 2)
+        self.put_obj(Wall(), 5, 3)
+        self.put_obj(Wall(), 5, 4)
+        self.put_obj(Wall(), 5, 5)
+        self.put_obj(Wall(), 7, 5)
+        self.put_obj(Wall(), 8, 5)
 
-        # self.put_obj(Lava(), 3, 4)
-        # self.put_obj(Lava(), 3, 5)
-        # self.put_obj(Lava(), 4, 4)
-        # self.put_obj(Lava(), 4, 5)
-        # self.put_obj(Lava(), 5, 4)
-        # self.put_obj(Lava(), 5, 5)
-        # self.put_obj(Lava(), 6, 4)
-        # self.put_obj(Lava(), 6, 5)
-        # self.put_obj(Lava(), 7, 4)
-        # self.put_obj(Lava(), 7, 5)
+        self.put_obj(Lava(), 1, 4)
+        self.put_obj(Lava(), 2, 4)
+        self.put_obj(Lava(), 3, 4)
+        self.put_obj(Lava(), 6, 3)
+        self.put_obj(Lava(), 6, 7)
+        self.put_obj(Lava(), 6, 8)
+        self.put_obj(Lava(), 7, 3)
 
         # Place the goal at last to cover other object
         self.put_obj(Goal(), goal_x, goal_y)

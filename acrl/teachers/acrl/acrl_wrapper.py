@@ -28,8 +28,18 @@ class ACRLWrapper(BaseWrapper):
             self.processed_context = self.cur_context
         else:
             self.processed_context = self.context_post_processing(self.cur_context)
-        # self.processed_context = self.env.unwrapped.context
+
         obs = self.env.reset(context=self.processed_context.copy())
+
+        if isinstance(obs, dict):
+            # print(self.processed_context)
+            # print('desired')
+            self.processed_context = obs['desired_goal']
+            # print('achieved')
+            # print(obs['achieved_goal'])
+            # print(self.processed_context)
+            obs = obs['observation']
+
         obs_wo_context = obs
 
         if self.context_visible:
@@ -45,17 +55,24 @@ class ACRLWrapper(BaseWrapper):
 
     def step(self, action, update=True, wo_context=False, insert=True):
         step = self.env.step(action)
-        current_step = step[0], action, step[1], self.last_obs_wo_context, self.cur_context
+        obs = step[0]
+        # print('achieved')
+        # print(obs['achieved_goal'])
+        # print(obs['desired_goal'])
+        if isinstance(step[0], dict):
+            obs = step[0]['observation']
+
+        current_step = obs, action, step[1], self.last_obs_wo_context, self.cur_context
         done = step[2]
 
-        self.last_obs_wo_context = step[0].copy()
+        self.last_obs_wo_context = obs.copy()
 
         # step = np.concatenate((step[0], self.env.unwrapped.context)), step[1], step[2], step[3]
         if wo_context:
-            step = step[0], np.concatenate((step[0], self.cur_context)), step[1], step[2], step[3]
+            step = obs, np.concatenate((obs, self.cur_context)), step[1], step[2], step[3]
         else:
-            step = np.concatenate((step[0], self.cur_context)), step[1], step[2], step[3]
-        self.last_obs = step[0].copy()
+            step = np.concatenate((obs, self.cur_context)), step[1], step[2], step[3]
+        self.last_obs = obs.copy()
 
         # insert VAE buffer
         if insert:

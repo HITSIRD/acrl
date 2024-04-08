@@ -43,7 +43,6 @@ class VDS(AbstractTeacher):
     def initialize_teacher(self, env, learner, state_provider):
         obs_shape = env.observation_space.shape
         action_dim = env.action_space.shape[0]
-        # action_dim = 8
         self.replay_buffer = ReplayBuffer(self.q_train_config["replay_size"], obs_shape, action_dim,
                                           handle_timeout_termination=False)
         self.learner = learner
@@ -197,6 +196,10 @@ class VDSWrapper(BaseWrapper):
             self.processed_context = self.context_post_processing(self.cur_context).copy()
         obs = self.env.reset(context=self.processed_context.copy())
 
+        if isinstance(obs, dict):
+            self.processed_context = obs['desired_goal']
+            obs = obs['observation']
+
         if self.context_visible:
             obs = np.concatenate((obs, self.processed_context))
 
@@ -206,9 +209,12 @@ class VDSWrapper(BaseWrapper):
 
     def step(self, action):
         step = self.env.step(action)
+        if isinstance(step[0], dict):
+            obs = step[0]['observation']
+
         if self.context_visible:
-            step = np.concatenate((step[0], self.processed_context)), step[1], step[2], step[3]
-        self.teacher.replay_buffer.add(self.last_obs, step[0].copy(), action, step[1], step[2], [])
+            step = np.concatenate((obs, self.processed_context)), step[1], step[2], step[3]
+        self.teacher.replay_buffer.add(self.last_obs, step[0], action, step[1], step[2], [])
         self.last_obs = step[0].copy()
         self.step_count += 1
         self.update(step)

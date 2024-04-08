@@ -15,11 +15,11 @@ from acrl.teachers.abstract_teacher import BaseWrapper
 from acrl.teachers.acl import ACL, ACLWrapper
 from acrl.teachers.plr import PLR, PLRWrapper
 from acrl.teachers.vds import VDS, VDSWrapper
-from acrl.teachers.sampler import Subsampler, MinigridSampler
+from acrl.teachers.sampler import Subsampler
 from scipy.stats import multivariate_normal
 from acrl.util.device import device_type
 
-from acrl.teachers.acrl.config.minigrid_a import config
+from acrl.teachers.acrl.config.fetch_push import config
 
 
 def context_post_processing(context):
@@ -28,14 +28,14 @@ def context_post_processing(context):
 
 
 class FetchPushExperiment(AbstractExperiment):
-    TARGET_MEANS = np.array([0.15, 0.15, 0.42])
+    TARGET_MEANS = np.array([0.15, 0, 0])
     TARGET_VARIANCES = np.diag([1e-4, 1e-4, 0])
 
-    LOWER_CONTEXT_BOUNDS = np.array([-0.15, -0.15, 0.42])
-    UPPER_CONTEXT_BOUNDS = np.array([0.15, 0.15, 0.42])
+    LOWER_CONTEXT_BOUNDS = np.array([-0.15, -0.15, -0.01])
+    UPPER_CONTEXT_BOUNDS = np.array([0.15, 0.15, 0.01])
 
     def target_sampler(self, n=None, rng=None):
-        target = np.array([0.15, 0.15, 0.42])
+        target = np.array([0.15, 0, 0])
         if n is None:
             return target
         else:
@@ -49,7 +49,7 @@ class FetchPushExperiment(AbstractExperiment):
         # There is another factor of 0.5 since exactly half of the distribution is out of bounds
         return np.log(0.5 * 0.5 * (np.exp(p0 - pmax) + np.exp(p1 - pmax))) + pmax
 
-    INITIAL_MEAN = np.array([-0.15, -0.15, 0.42])
+    INITIAL_MEAN = np.array([-0.12, 0., 0.])
     # INITIAL_VARIANCE = np.diag(np.square([1., 1.]))
     INITIAL_VARIANCE = np.array([0.01, 0.01, 0.])
 
@@ -82,7 +82,7 @@ class FetchPushExperiment(AbstractExperiment):
     AG_FIT_RATE = {Learner.PPO: 100, Learner.SAC: None}
     AG_MAX_SIZE = {Learner.PPO: 500, Learner.SAC: None}
 
-    GG_NOISE_LEVEL = {Learner.PPO: 0.1, Learner.SAC: None}
+    GG_NOISE_LEVEL = {Learner.PPO: 0.05, Learner.SAC: None}
     GG_FIT_RATE = {Learner.PPO: 200, Learner.SAC: None}
     GG_P_OLD = {Learner.PPO: 0.2, Learner.SAC: None}
 
@@ -114,7 +114,7 @@ class FetchPushExperiment(AbstractExperiment):
             env = ALPGMMWrapper(env, teacher, self.DISCOUNT_FACTOR, context_visible=True,
                                 context_post_processing=context_post_processing)
         elif self.curriculum.goal_gan():
-            samples = np.random.uniform(self.LOWER_CONTEXT_BOUNDS, self.UPPER_CONTEXT_BOUNDS, size=(1000, 2))
+            samples = np.random.uniform(self.LOWER_CONTEXT_BOUNDS, self.UPPER_CONTEXT_BOUNDS, size=(1000, 3))
             teacher = GoalGAN(self.LOWER_CONTEXT_BOUNDS.copy(), self.UPPER_CONTEXT_BOUNDS.copy(),
                               state_noise_level=self.GG_NOISE_LEVEL[self.learner], success_distance_threshold=0.01,
                               update_size=self.GG_FIT_RATE[self.learner], n_rollouts=2, goid_lb=0.25, goid_ub=0.75,
@@ -160,7 +160,7 @@ class FetchPushExperiment(AbstractExperiment):
 
     def create_learner_params(self):
         return dict(common=dict(gamma=self.DISCOUNT_FACTOR, seed=self.seed, verbose=0, device=device_type,
-                                policy_kwargs=dict(net_arch=[128, 128, 128], activation_fn=torch.nn.Tanh),
+                                policy_kwargs=dict(net_arch=[256, 256, 256], activation_fn=torch.nn.ReLU),
                                 tensorboard_log=self.get_log_dir()),
                     ppo=dict(n_steps=self.STEPS_PER_ITER, gae_lambda=self.LAM, batch_size=128),
                     sac=dict(learning_rate=3e-4, buffer_size=10000, learning_starts=500, batch_size=64,
@@ -177,7 +177,7 @@ class FetchPushExperiment(AbstractExperiment):
 
         if isinstance(env, VDSWrapper):
             state_provider = lambda contexts: np.concatenate(
-                [np.repeat(np.ones(147, )[None, :], contexts.shape[0], axis=0),
+                [np.repeat(np.ones(25, )[None, :], contexts.shape[0], axis=0),
                  contexts], axis=-1)
             env.teacher.initialize_teacher(env, interface, state_provider)
 
@@ -199,7 +199,7 @@ class FetchPushExperiment(AbstractExperiment):
                                       self.INITIAL_VARIANCE.copy(), bounds, self.DELTA, max_kl=self.KL_EPS,
                                       std_lower_bound=self.STD_LOWER_BOUND.copy(), kl_threshold=self.KL_THRESHOLD)
         else:
-            init_samples = np.random.uniform(self.LOWER_CONTEXT_BOUNDS, self.UPPER_CONTEXT_BOUNDS, size=(200, 2))
+            init_samples = np.random.uniform(self.LOWER_CONTEXT_BOUNDS, self.UPPER_CONTEXT_BOUNDS, size=(200, 3))
             return CurrOT(bounds, init_samples, self.target_sampler, self.DELTA, self.METRIC_EPS, self.EP_PER_UPDATE,
                           wb_max_reuse=1)
 
@@ -216,4 +216,4 @@ class FetchPushExperiment(AbstractExperiment):
                 action = model.step(obs, state=None, deterministic=False)
                 obs, rewards, done, infos = self.vec_eval_env.step(action)
 
-        return self.eval_env.get_statistics()[0]
+        return self.eval_env.get_statistics()[4]
