@@ -73,11 +73,8 @@ class BaseWrapper(gym.Env):
     def step(self, action):
         step = self.env.step(action)
         obs = step[0]
-        # print('achieved')
-        # print(obs['achieved_goal'])
-        # print(obs['desired_goal'])
-        if isinstance(step[0], dict):
-            obs = step[0]['observation']
+        # if isinstance(step[0], dict):
+        #     obs = step[0]['observation']
 
         if self.context_visible:
             step = np.concatenate((obs, self.processed_context)), step[1], step[2], step[3]
@@ -95,9 +92,9 @@ class BaseWrapper(gym.Env):
         # WARNING, MAKE SURE THE UNWRAPPED ENV IS SET CORRECTLY
         # self.env.context = self.processed_context.copy()
         obs = self.env.reset(context=self.processed_context.copy())
-        if isinstance(obs, dict):
-            self.processed_context = obs['desired_goal']
-            obs = obs['observation']
+        # if isinstance(obs, dict):
+        #     self.processed_context = obs['desired_goal']
+        #     obs = obs['observation']
 
         if self.context_visible:
             obs = np.concatenate((obs, self.processed_context))

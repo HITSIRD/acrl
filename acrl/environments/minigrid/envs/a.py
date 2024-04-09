@@ -11,15 +11,8 @@ from acrl.environments.minigrid.core.mission import MissionSpace
 from acrl.environments.minigrid.core.world_object import Goal, Lava, Wall
 from acrl.environments.minigrid.minigrid_env import MiniGridEnv
 
-if torch.cuda.is_available():
-    device = torch.device('cuda:0')
-# elif torch.has_mps:
-#    device = torch.device('mps')
-else:
-    device = torch.device('cpu')
-
 # domain = [[1, 1], [6, 1], [6, 2], [6, 3], [6, 4], [6, 5], [6, 6], [6, 7]]  #  original version
-domain = [[1, 1], [1, 4], [2, 4], [2, 7], [3, 4], [3, 7], [4, 6], [5, 1], [5, 2], [5, 3], [5, 4], [5, 5], [6, 3],
+domain = [[1, 1], [1, 4], [2, 4], [2, 7], [3, 4], [3, 7], [5, 1], [5, 2], [5, 3], [5, 4], [5, 5], [6, 3],
           [6, 7], [6, 8], [7, 3], [7, 5], [8, 5]]
 
 plt.rc('text.latex')
@@ -81,13 +74,11 @@ class AEnv(MiniGridEnv):
 
     def __init__(self, size=8, max_steps: int | None = None, **kwargs):
         if max_steps is None:
-            max_steps = 50
+            max_steps = 75
 
         self.task_dim = 2
         self.num_possible_goals = 0
         self.possible_goals = None
-
-        self.domain = domain
 
         self.step_count = 0
         mission_space = MissionSpace(mission_func=self._gen_mission)
@@ -158,7 +149,7 @@ class AEnv(MiniGridEnv):
 
         self.put_obj(Wall(), 2, 7)
         self.put_obj(Wall(), 3, 7)
-        self.put_obj(Wall(), 4, 6)
+        # self.put_obj(Wall(), 4, 6)
         self.put_obj(Wall(), 5, 1)
         self.put_obj(Wall(), 5, 2)
         self.put_obj(Wall(), 5, 3)
@@ -167,13 +158,13 @@ class AEnv(MiniGridEnv):
         self.put_obj(Wall(), 7, 5)
         self.put_obj(Wall(), 8, 5)
 
-        self.put_obj(Lava(), 1, 4)
-        self.put_obj(Lava(), 2, 4)
-        self.put_obj(Lava(), 3, 4)
-        self.put_obj(Lava(), 6, 3)
-        self.put_obj(Lava(), 6, 7)
-        self.put_obj(Lava(), 6, 8)
-        self.put_obj(Lava(), 7, 3)
+        self.put_obj(Wall(), 1, 4)
+        self.put_obj(Wall(), 2, 4)
+        self.put_obj(Wall(), 3, 4)
+        self.put_obj(Wall(), 6, 3)
+        self.put_obj(Wall(), 6, 7)
+        self.put_obj(Wall(), 6, 8)
+        self.put_obj(Wall(), 7, 3)
 
         # Place the goal at last to cover other object
         self.put_obj(Goal(), goal_x, goal_y)
@@ -541,8 +532,8 @@ class AEnv(MiniGridEnv):
                 (episode_return + 0.55) / 1.55 * 255)
 
         plt.imshow(img)
-        color_bar = plt.colorbar(
-            plt.cm.ScalarMappable(norm=Normalize(-0.55, 1), cmap=cmap))
+        # color_bar = plt.colorbar(
+        #     plt.cm.ScalarMappable(norm=Normalize(-0.55, 1), cmap=cmap))
         plt.axis('off')
         plt.tight_layout()
 

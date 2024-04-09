@@ -4,7 +4,7 @@ import matplotlib
 import numpy as np
 from matplotlib import cm
 
-from acrl.experiments import MinigridAExperiment
+from acrl.experiments import MinigridDExperiment
 from misc.util import add_plot
 import matplotlib.pyplot as plt
 
@@ -40,11 +40,11 @@ def performance_plot(ax=None, path=None, base_log_dir="logs", acrl_lambda=0.25):
     for method, color in zip(["self_paced", "random", "default", "wasserstein", "goal_gan", "alp_gmm",
                               "acl", "plr", "vds", "acrl"],
                              ["C0", "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9"]):
-        exp = MinigridAExperiment(base_log_dir, method, "ppo", {'ACRL_LAMBDA': acrl_lambda}, seed=1)
+        exp = MinigridDExperiment(base_log_dir, method, "ppo", {'ACRL_LAMBDA': acrl_lambda}, seed=1)
         log_dir = os.path.dirname(exp.get_log_dir())
         lines.append(add_plot(log_dir, ax, color))
 
-    ax.set_title('MiniGrid-A', fontsize=FONT_SIZE)
+    ax.set_title('MiniGrid-D', fontsize=FONT_SIZE)
     ax.set_ylabel(r"Episodic Return", fontsize=FONT_SIZE, labelpad=2.)
     ax.set_xlabel(r"Train Steps ($\times 10^3$)", fontsize=FONT_SIZE, labelpad=2.)
 
@@ -78,9 +78,9 @@ def performance_plot(ax=None, path=None, base_log_dir="logs", acrl_lambda=0.25):
 
 
 if __name__ == "__main__":
-    os.makedirs("./figures/minigrid_a", exist_ok=True)
+    os.makedirs("./figures/minigrid_d", exist_ok=True)
     # base_log_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "logs")
     base_log_dir = "./logs"
-    acrl_lambda = 0.75
-    performance_plot(path='./figures/minigrid_a/' + str(acrl_lambda) + '.pdf', base_log_dir=base_log_dir,
+    acrl_lambda = 0.25
+    performance_plot(path='./figures/minigrid_d/' + str(acrl_lambda) + '.pdf', base_log_dir=base_log_dir,
                      acrl_lambda=acrl_lambda)

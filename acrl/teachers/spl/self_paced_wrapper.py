@@ -6,10 +6,9 @@ from acrl.teachers.abstract_teacher import BaseWrapper
 class SelfPacedWrapper(BaseWrapper):
 
     def __init__(self, env, sp_teacher, discount_factor, context_visible, reward_from_info=False,
-                 use_undiscounted_reward=False, episodes_per_update=50, context_post_processing=None):
+                 use_undiscounted_reward=False, episodes_per_update=50):
         self.use_undiscounted_reward = use_undiscounted_reward
-        BaseWrapper.__init__(self, env, sp_teacher, discount_factor, context_visible, reward_from_info=reward_from_info,
-                             context_post_processing=context_post_processing)
+        BaseWrapper.__init__(self, env, sp_teacher, discount_factor, context_visible, reward_from_info=reward_from_info)
 
         self.context_buffer = Buffer(3, episodes_per_update + 1, True)
         self.episodes_per_update = episodes_per_update

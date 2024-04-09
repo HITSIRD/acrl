@@ -3,15 +3,15 @@
 config = {
     # --- CURRICULUM ---
     'step_size': 0.9,
-    'return_delta': -60,  # select traj sample which return is greater than return_delta
-    'update_delta': -70,  # if mean of return > update_delta, then update context dist
-    'target_return_threshold': -70,
-    'task_buffer_size': 500,
+    'return_delta': -90,  # select traj sample which return is greater than return_delta
+    'update_delta': -100,  # if mean of return > update_delta, then update context dist
+    'target_return_threshold': -90,
+    'task_buffer_size': 256,
     'lambda': 0.2,
     'noise_std': [1.0, 1.0],
-    'num_target_samples': 30,
+    'num_target_samples': 20,
     'update_freq': 1000,
-    'enable_lsp': False,
+    'enable_lsp': True,
     'enable_ebu': True,
     'encoder_max_grad_norm': None,
     'decoder_max_grad_norm': None,
@@ -21,9 +21,9 @@ config = {
     'lr_vae': 0.005,
     'lr_task_decoder': 0.005,
     'vae_buffer_add_thresh': 1,
-    'vae_batch_num_trajectories': 32,
+    'vae_batch_num_trajectories': 16,
     'vae_avg_reconstruction_terms': False,
-    'num_vae_update': 5,
+    'num_vae_update': 3,
     'max_task_decoder_update': 8,
     'task_decoder_loss_threshold': 0.001,
     'pretrain_len': 0,
@@ -73,7 +73,7 @@ config = {
     # combining vae and RL loss
     'rlloss_through_encoder': False,
     'add_nonlinearity_to_latent': False,
-    'vae_loss_HHcoeff': 0.01,
+    'vae_loss_coeff': 0.01,
 
     # for the policy training
     'sample_embeddings': False,

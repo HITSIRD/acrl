@@ -789,6 +789,10 @@ class MiniGridEnv(gym.Env):
 
     def render(self, mode='human'):
         img = self.get_frame(self.highlight, self.tile_size, self.agent_pov)
+        # plt.imshow(img)
+        # plt.axis('off')
+        # plt.savefig('minigrid_easy.pdf', bbox_inches='tight', pad_inches=0)
+        # plt.show()
 
         if self.render_mode == "human":
             # if self.window is None:
@@ -796,10 +800,6 @@ class MiniGridEnv(gym.Env):
             #     self.window.show(block=False)
             # self.window.set_caption(self.mission)
             # self.window.show_img(img)
-            # plt.imshow(img)
-            # plt.axis('off')
-            # plt.savefig('minigrid_easy.pdf', bbox_inches='tight', pad_inches=0)
-            # plt.show()
             pass
         elif self.render_mode == "rgb_array":
             return img

@@ -6,6 +6,9 @@ import pickle
 import numpy as np
 from abc import ABC, abstractmethod
 from enum import Enum
+
+from stable_baselines3 import DDPG
+
 from acrl.util.parameter_parser import create_override_appendix
 from acrl.teachers.spl import SelfPacedTeacherV2
 
@@ -16,6 +19,7 @@ from stable_baselines3.common.vec_env import VecEnv, DummyVecEnv
 from stable_baselines3.ppo.policies import MlpPolicy as PPOMlpPolicy
 from stable_baselines3.sac.policies import MlpPolicy as SACMlpPolicy
 from stable_baselines3.td3.policies import MlpPolicy as TD3MlpPolicy
+from stable_baselines3.ddpg.policies import MlpPolicy as DDPGMlpPolicy
 
 from acrl.util.device import device
 
@@ -200,6 +204,28 @@ class PPOInterface(AgentInterface):
         return 1
 
 
+class DDPGInterface(AgentInterface):
+
+    def __init__(self, learner, obs_dim):
+        super().__init__(learner, obs_dim)
+        self.grad_fn = []
+
+    def estimate_value_internal(self, inputs):
+        return np.squeeze(
+            self.learner.policy.predict_values(torch.from_numpy(inputs).to(device)).cpu().detach().numpy())
+
+    def get_action(self, observations):
+        flat_obs = np.reshape(observations, (-1, observations.shape[-1]))
+        flat_acts = self.learner.predict(flat_obs, deterministic=False)[0]
+        return np.reshape(flat_acts, (observations.shape[0:-1]) + (-1,))
+
+    def mean_policy_std(self, cb_args, cb_kwargs):
+        if "infos_values" in cb_args[0] and len(cb_args[0]["infos_values"]) > 0:
+            return cb_args[0]["infos_values"][4]
+        else:
+            return np.nan
+
+
 class SACEvalWrapper:
 
     def __init__(self, model):
@@ -231,18 +257,29 @@ class PPOEvalWrapper:
             return self.model.predict(observation, state=state, deterministic=deterministic)[0]
 
 
+class DDPGEvalWrapper:
+    def __init__(self, model):
+        self.model = model
+
+    def step(self, observation, state=None, deterministic=False):
+        return self.model.predict(observation, state=state, deterministic=deterministic)[0]
+
+
 class Learner(Enum):
     PPO = 1
     SAC = 2
     TD3 = 3
+    DDPG = 4
 
     def __str__(self):
         if self.ppo():
             return "ppo"
         elif self.sac():
             return "sac"
-        else:
+        elif self.td3():
             return "td3"
+        else:
+            return "ddpg"
 
     def ppo(self):
         return self.value == Learner.PPO.value
@@ -252,6 +289,9 @@ class Learner(Enum):
 
     def td3(self):
         return self.value == Learner.TD3.value
+
+    def ddpg(self):
+        return self.value == Learner.DDPG.value
 
     def create_learner(self, env, parameters):
         if self.ppo() and not issubclass(type(env), VecEnv):
@@ -263,9 +303,12 @@ class Learner(Enum):
         elif self.sac():
             model = SAC(SACMlpPolicy, env, **parameters["common"], **parameters[str(self)])
             interface = SACInterface(model, env.observation_space.shape[0])
-        else:
+        elif self.td3():
             model = TD3(TD3MlpPolicy, env, **parameters["common"], **parameters[str(self)])
             interface = TD3Interface(model, env.observation_space.shape[0])
+        else:
+            model = DDPG(DDPGMlpPolicy, env, **parameters["common"], **parameters[str(self)])
+            interface = DDPGInterface(model, env.observation_space.shape[0])
 
         return model, interface
 
@@ -274,8 +317,10 @@ class Learner(Enum):
             return PPO.load(path, env=env, device="cuda:0")
         elif self.sac():
             return SAC.load(path, env=env, device="cuda:0")
-        else:
+        elif self.td3():
             return TD3.load(path, env=env, device="cuda:0")
+        else:
+            return DDPG.load(path, env=env, device="cuda:0")
 
     def load_for_evaluation(self, path, env):
         if self.ppo() and not issubclass(type(env), VecEnv):
@@ -294,6 +339,8 @@ class Learner(Enum):
             return Learner.SAC
         elif string == str(Learner.TD3):
             return Learner.TD3
+        elif string==str(Learner.DDPG):
+            return Learner.DDPG
         else:
             raise RuntimeError("Invalid string: '" + string + "'")
 

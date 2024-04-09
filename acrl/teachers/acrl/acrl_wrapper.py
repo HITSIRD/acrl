@@ -32,12 +32,7 @@ class ACRLWrapper(BaseWrapper):
         obs = self.env.reset(context=self.processed_context.copy())
 
         if isinstance(obs, dict):
-            # print(self.processed_context)
-            # print('desired')
             self.processed_context = obs['desired_goal']
-            # print('achieved')
-            # print(obs['achieved_goal'])
-            # print(self.processed_context)
             obs = obs['observation']
 
         obs_wo_context = obs

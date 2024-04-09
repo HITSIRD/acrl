@@ -47,14 +47,14 @@ def performance_plot(ax=None, path=None, base_log_dir="logs", acrl_lambda=0.5):
     ax.set_ylabel(r"Episodic Return", fontsize=FONT_SIZE, labelpad=2.)
     ax.set_xlabel(r"Train Steps ($\times 10^3$)", fontsize=FONT_SIZE, labelpad=2.)
 
-    if show:
-        ax.legend(lines,
-                  [r"\sprl", "Random", "Default", "CURROT", "Goal GAN", "ALP-GMM", r"\acl", "PLR", "VDS",
-                   "ACRL (ours)"],
-                  fontsize=11, loc='upper left')
+    # if show:
+    #     ax.legend(lines,
+    #               [r"\sprl", "Random", "Default", "CURROT", "Goal GAN", "ALP-GMM", r"\acl", "PLR", "VDS",
+    #                "ACRL (ours)"],
+    #               fontsize=11, loc='upper left')
 
     ax.set_xticks([0, 40, 80, 120, 160, 200])
-    ax.set_xticklabels([r"$0$", r"$100$", r"$200$", r"$30$", r"$400$", r"500"])
+    ax.set_xticklabels([r"$0$", r"$100$", r"$200$", r"$300$", r"$400$", r"500"])
     # ax.set_xlim([0, 150])
 
     # ax.set_yticks([-1, -0.5, 0, 0.5, 1.0])

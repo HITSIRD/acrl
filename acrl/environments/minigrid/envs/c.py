@@ -8,15 +8,6 @@ from acrl.environments.minigrid.core.mission import MissionSpace
 from acrl.environments.minigrid.core.world_object import Door, Goal, Wall, Key, Lava
 from acrl.environments.minigrid.minigrid_env import MiniGridEnv
 
-# from utils.evaluation import get_test_rollout
-
-# if torch.cuda.is_available():
-#     device = torch.device('cuda:0')
-# #elif torch.has_mps:
-# #    device = torch.device('mps')
-# else:
-#     device = torch.device('cpu')
-
 domain = [[1, 1], [1, 5], [2, 5], [3, 5], [4, 5], [5, 5], [5, 6], [5, 7], [5, 8], [5, 9], [5, 10], [8, 5], [9, 5],
           [10, 5]]
 key_domain = [[1, 6], [2, 6], [3, 6], [4, 6], [1, 7], [2, 7], [3, 7], [4, 7], [1, 8], [2, 8], [3, 8], [4, 8],
@@ -81,13 +72,6 @@ class CEnv(MiniGridEnv):
             max_steps = 200
 
         self.task_dim = 4
-        self.num_possible_goals = 0
-        self.possible_goals = None
-        # self.domain = [[1, 1], [5, 5], [5, 6], [5, 7], [5, 8], [6, 5], [7, 5], [8, 5], [1, 6], [1, 7], [1, 8], [2, 6],
-        #                [2, 7], [2, 8], [5, 1], [6, 1], [7, 1], [5, 2], [6, 2], [7, 2]]
-        self.domain = [[1, 1], [1, 5], [2, 5], [3, 5], [4, 5], [5, 5], [5, 6], [5, 7], [5, 8], [5, 9], [7, 5], [8, 5],
-                       [9, 5], [10, 5]]
-
         self.step_count = 0
         mission_space = MissionSpace(mission_func=self._gen_mission)
         super().__init__(
@@ -107,13 +91,6 @@ class CEnv(MiniGridEnv):
     @staticmethod
     def is_feasible(context):
         # Check that the context is not in or beyond the outer wall
-        # if context[0] > 5.5 and context[0] < 6.5:
-        #     if context[1] < 7.5:
-        #         return False
-        # if context[0] > 8 or context[0] < 1 or context[1] > 8 or context[1] < 1:
-        #     return False
-        # return True
-
         goal_x = int(np.rint(context[0]))
         goal_y = int(np.rint(context[1]))
         key_x = int(np.rint(context[2]))
@@ -127,14 +104,6 @@ class CEnv(MiniGridEnv):
             return False
         if key_y < 1 or key_y > 10:
             return False
-        # door = context[4:6]
-        # if domain.count([goal_x, goal_y]) > 0 and key_domain.count([key_x, key_y]) > 0:
-        #     if [goal_x, goal_y] != [key_x, key_y]:
-        #         return True
-        #     else:
-        #         return False
-        # else:
-        #     return False
 
         if domain.count([goal_x, goal_y]) == 0 and domain.count([key_x, key_y]) == 0 and key_domain.count(
                 [key_x, key_y]) == 0:

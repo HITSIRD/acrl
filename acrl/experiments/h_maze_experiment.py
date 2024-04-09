@@ -18,7 +18,7 @@ from acrl.teachers.sampler import Subsampler
 from scipy.stats import multivariate_normal
 from acrl.util.device import device_type
 
-from acrl.teachers.acrl.config.u_maze import config
+from acrl.teachers.acrl.config.h_maze import config
 
 os.environ[
     'LD_LIBRARY_PATH'] = '$LD_LIBRARY_PATH:/home/wenyongyan/.mujoco/mujoco210/bin:$LD_LIBRARY_PATH:/usr/lib/nvidia'
@@ -37,8 +37,8 @@ class HMazeExperiment(AbstractExperiment):
     TARGET_MEANS = np.array([6., 0.])
     TARGET_VARIANCES = np.diag([1e-4, 1e-4])
 
-    LOWER_CONTEXT_BOUNDS = np.array([-1., -1.])
-    UPPER_CONTEXT_BOUNDS = np.array([9., 9.])
+    LOWER_CONTEXT_BOUNDS = np.array([-1., -9.])
+    UPPER_CONTEXT_BOUNDS = np.array([9., 1.])
 
     def target_sampler(self, rng=None):
         target = np.array([6., 0.])
@@ -52,7 +52,7 @@ class HMazeExperiment(AbstractExperiment):
         # There is another factor of 0.5 since exactly half of the distribution is out of bounds
         return np.log(0.5 * 0.5 * (np.exp(p0 - pmax) + np.exp(p1 - pmax))) + pmax
 
-    INITIAL_MEAN = np.array([0., 2.])
+    INITIAL_MEAN = np.array([0., -2.])
     INITIAL_VARIANCE = np.array([0.5, 0.5])
 
     STD_LOWER_BOUND = np.array([0.01, 0.01])
@@ -209,13 +209,10 @@ class HMazeExperiment(AbstractExperiment):
     def evaluate_learner(self, path):
         model_load_path = os.path.join(path, "model.zip")
         model = self.learner.load_for_evaluation(model_load_path, self.vec_eval_env)
-        episode = np.zeros(30)
         for i in range(0, 30):
             obs = self.vec_eval_env.reset()
             done = False
             while not done:
                 action = model.step(obs, state=None, deterministic=False)
                 obs, rewards, done, infos = self.vec_eval_env.step(action)
-                episode[i] += rewards
-        # print(episode)
         return self.eval_env.get_statistics()[0]

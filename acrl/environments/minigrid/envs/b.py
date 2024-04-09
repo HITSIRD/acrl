@@ -5,23 +5,12 @@ import random
 import torch
 from matplotlib.colors import Normalize, ListedColormap
 
-# import utils.helpers
 from acrl.environments.minigrid.core.grid import Grid
 from acrl.environments.minigrid.core.mission import MissionSpace
 from acrl.environments.minigrid.core.world_object import Door, Goal, Wall, Lava, Key
 from acrl.environments.minigrid.minigrid_env import MiniGridEnv
 
-import matplotlib.pyplot as plt
 import numpy as np
-
-# from utils.evaluation import get_test_rollout
-
-if torch.cuda.is_available():
-    device = torch.device('cuda:0')
-# elif torch.has_mps:
-#    device = torch.device('mps')
-else:
-    device = torch.device('cpu')
 
 domain = [[2, 1], [3, 1], [4, 1], [8, 1], [1, 2], [2, 2], [3, 2], [4, 2], [8, 2], [1, 3], [2, 3], [3, 3], [4, 3],
           [5, 3], [6, 3], [7, 3], [8, 3], [1, 4], [2, 4], [3, 4], [5, 4], [6, 4], [7, 4], [8, 4], [1, 5], [2, 5],
@@ -98,8 +87,6 @@ class BEnv(MiniGridEnv):
         self.task_dim = 4
         self.num_possible_goals = 0
         self.possible_goals = None
-
-        self.domain = [[1, 1], [5, 5], [5, 6], [5, 7], [5, 8], [6, 5], [7, 5], [8, 5]]
 
         self.step_count = 0
         mission_space = MissionSpace(mission_func=self._gen_mission)
@@ -229,15 +216,6 @@ class BEnv(MiniGridEnv):
         # Check that the agent doesn't overlap with an object
         start_cell = self.grid.get(*self.agent_pos)
         assert start_cell is None or start_cell.can_overlap()
-
-        if self.possible_goals is None:
-            self.possible_goals = []
-            for i in range(1, self.width - 1):
-                for j in range(1, self.height - 1):
-                    self.possible_goals.append([i, j])
-
-            for goal in self.domain:
-                self.possible_goals.remove(goal)
 
         # Item picked up, being carried, initially nothing
         self.carrying = None

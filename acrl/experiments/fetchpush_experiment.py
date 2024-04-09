@@ -2,6 +2,7 @@ import os
 import gym
 import torch
 import numpy as np
+from stable_baselines3.common.noise import NormalActionNoise
 from stable_baselines3.common.vec_env import DummyVecEnv
 
 from acrl.environments.minigrid.envs import AEnv
@@ -164,7 +165,9 @@ class FetchPushExperiment(AbstractExperiment):
                                 tensorboard_log=self.get_log_dir()),
                     ppo=dict(n_steps=self.STEPS_PER_ITER, gae_lambda=self.LAM, batch_size=128),
                     sac=dict(learning_rate=3e-4, buffer_size=10000, learning_starts=500, batch_size=64,
-                             train_freq=5, target_entropy="auto"))
+                             train_freq=5, target_entropy="auto"),
+                    ddpg=dict(learning_rate=1e-3, buffer_size=10000, batch_size=256,
+                              action_noise=NormalActionNoise(np.zeros(4), 0.2 * np.zeros(4))))
 
     def create_experiment(self):
         timesteps = 201 * self.STEPS_PER_ITER

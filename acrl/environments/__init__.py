@@ -30,6 +30,18 @@ register(
     kwargs={"size": 16},
 )
 
+register(
+    id="MiniGrid-D-v1",
+    entry_point="acrl.environments.minigrid.envs:DEnv",
+    kwargs={"size": 10},
+)
+
+register(
+    id="MiniGrid-E-v1",
+    entry_point="acrl.environments.minigrid.envs:EEnv",
+    kwargs={"size": 10},
+)
+
 robots = ['Point', 'Ant', 'Swimmer']
 # task_types = ['Maze', 'Maze1', 'Maze2', 'Push', 'Fall', 'Block', 'BlockMaze']
 task_types = ['Maze', 'Maze1', 'Maze2']
@@ -49,6 +61,8 @@ for name_t in all_name:
         max_timestep = 1000
         top_down = False
         goal_obs = True
+    if name_t == "PointMaze2":
+        max_timestep = 250
     else:
         max_timestep = 100
     for Test in ['', 'Test', 'Test1', 'Test2']:

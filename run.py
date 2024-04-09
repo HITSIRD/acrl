@@ -11,9 +11,10 @@ def main():
     parser.add_argument("--type", type=str, default="wasserstein",
                         choices=["default", "random", "self_paced", "wasserstein", "alp_gmm",
                                  "goal_gan", "acl", "plr", "vds", "acrl"])
-    parser.add_argument("--learner", type=str, default="ppo", choices=["ppo", "sac", "td3"])
+    parser.add_argument("--learner", type=str, default="ppo", choices=["ppo", "sac", "td3", "ddpg"])
     parser.add_argument("--env", type=str, default="minigrid",
-                        choices=["point_mass_2d", "maze", "minigrid-a", "minigrid-b", "minigrid-c", "u-maze",
+                        choices=["point_mass_2d", "maze", "minigrid-a", "minigrid-b", "minigrid-c", "minigrid-d",
+                                 "minigrid-e", "minigrid-f", "minigrid-g", "minigrid-h", "u-maze",
                                  "h-maze", "swimmer-maze", "fetchpush"])
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--n_cores", type=int, default=8)
@@ -37,6 +38,12 @@ def main():
     elif args.env == 'minigrid-c':
         from acrl.experiments.minigrid_c_experiment import MinigridCExperiment
         exp = MinigridCExperiment(args.base_log_dir, args.type, args.learner, parameters, args.seed)
+    elif args.env == 'minigrid-d':
+        from acrl.experiments.minigrid_d_experiment import MinigridDExperiment
+        exp = MinigridDExperiment(args.base_log_dir, args.type, args.learner, parameters, args.seed)
+    elif args.env == 'minigrid-e':
+        from acrl.experiments.minigrid_e_experiment import MinigridEExperiment
+        exp = MinigridEExperiment(args.base_log_dir, args.type, args.learner, parameters, args.seed)
     elif args.env == 'u-maze':
         from acrl.experiments.u_maze_experiment import UMazeExperiment
         exp = UMazeExperiment(args.base_log_dir, args.type, args.learner, parameters, args.seed)

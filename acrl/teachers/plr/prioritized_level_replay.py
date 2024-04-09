@@ -133,9 +133,9 @@ class PLRWrapper(BaseWrapper):
             self.processed_context = self.context_post_processing(self.cur_context).copy()
         obs = self.env.reset(context=self.processed_context.copy())
 
-        if isinstance(obs, dict):
-            self.processed_context = obs['desired_goal']
-            obs = obs['observation']
+        # if isinstance(obs, dict):
+        #     self.processed_context = obs['desired_goal']
+        #     obs = obs['observation']
 
         if self.context_visible:
             obs = np.concatenate((obs, self.processed_context))
@@ -147,15 +147,15 @@ class PLRWrapper(BaseWrapper):
 
     def step(self, action):
         step = self.env.step(action)
-        obs = step[0]
+        # obs = step[0]
 
-        if isinstance(step[0], dict):
-            obs = step[0]['observation']
+        # if isinstance(step[0], dict):
+        #     obs = step[0]['observation']
 
         self.step_count += 1
         if self.context_visible:
-            step = np.concatenate((obs, self.processed_context)), step[1], step[2], step[3]
-        self.state_trace.append(obs.copy())
+            step = np.concatenate((step[0], self.processed_context)), step[1], step[2], step[3]
+        self.state_trace.append(step[0].copy())
         self.reward_trace.append(step[1])
 
         # In this case PLR trains its own value function (if e.g. using a different algorithm than PPO)
