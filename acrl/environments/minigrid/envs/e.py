@@ -14,12 +14,14 @@ from acrl.environments.minigrid.utils.util import get_area
 import matplotlib.pyplot as plt
 import numpy as np
 
-wall = [[4, 3], [6, 3], [6, 4], [6, 5], [6, 6], [6, 7], [6, 8]]
-lava = [[1, 3], [2, 3], [3, 3], [3, 4], [3, 5], [3, 6]]
-door = [5, 3]
+wall = [[1, 3], [2, 3], [3, 3], [4, 3], [5, 3], [6, 3], [6, 5], [6, 6], [6, 7], [6, 8]]
+# lava = [[1, 3], [2, 3], [3, 3], [3, 4], [3, 5], [3, 6]]
+lava = [[3, 4], [3, 5], [3, 6]]
+door = [6, 4]
 obstacle = wall + lava + [door]
 key_ban_domain = get_area([1, 3], height=5, weight=5)
-key = [8, 6]
+key = [8, 8]
+start = [1, 1]
 
 
 class EEnv(MiniGridEnv):
@@ -77,7 +79,7 @@ class EEnv(MiniGridEnv):
 
     def __init__(self, size=8, max_steps: int | None = None, **kwargs):
         if max_steps is None:
-            max_steps = 50
+            max_steps = 75
 
         self.task_dim = 4
         self.step_count = 0
@@ -99,24 +101,19 @@ class EEnv(MiniGridEnv):
     @staticmethod
     def is_feasible(context):
         # Check that the context is not in or beyond the outer wall
-        # if context[0] > 5.5 and context[0] < 6.5:
-        #     if context[1] < 7.5:
-        #         return False
-        # if context[0] > 8 or context[0] < 1 or context[1] > 8 or context[1] < 1:
-        #     return False
-        # return True
-
         goal = [np.rint(context[0]), np.rint(context[1])]
         key = [np.rint(context[2]), np.rint(context[3])]
+        if goal == start or key == start:
+            return False
         if goal == key:
             return False
-        else:
-            return True
-
-        # if obstacle.count(goal) == 0 and obstacle.count(key) == 0 and key_ban_domain.count(key):
-        #     return True
         # else:
-        #     return False
+        #     return True
+
+        if obstacle.count(goal) == 0 and obstacle.count(key) == 0 and key_ban_domain.count(key) == 0:
+            return True
+        else:
+            return False
 
     def sample_initial_state(self, contexts=None):
         if contexts is None:
@@ -196,7 +193,7 @@ class EEnv(MiniGridEnv):
         self.door_count = 0
 
         if self.render_mode == "human":
-        # self.render()
+            self.render()
 
         # Return first observation
         obs = self.gen_obs()

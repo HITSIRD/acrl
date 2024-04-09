@@ -28,14 +28,14 @@ def context_post_processing(context):
 
 
 class MinigridEExperiment(AbstractExperiment):
-    TARGET_MEANS = np.array([1, 4, 8, 6])
+    TARGET_MEANS = np.array([1, 4, 8, 8])
     TARGET_VARIANCES = np.diag([1e-4, 1e-4, 1e-4, 1e-4])
 
-    LOWER_CONTEXT_BOUNDS = np.array([0.5, 0.5, 0.5, 0.5])
-    UPPER_CONTEXT_BOUNDS = np.array([8.5, 8.5, 8.5, 8.5])
+    LOWER_CONTEXT_BOUNDS = np.array([0.5001, 0.5001, 0.5001, 0.5001])
+    UPPER_CONTEXT_BOUNDS = np.array([8.4999, 8.4999, 8.4999, 8.4999])
 
     def target_sampler(self, n=None, rng=None):
-        target = np.array([1, 4, 8, 6])
+        target = np.array([1, 4, 8, 8])
         if n is None:
             return target
         else:

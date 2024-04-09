@@ -3,16 +3,16 @@
 config = {
     # --- CURRICULUM ---
     'step_size': 0.9,
-    'return_delta': -70,  # select traj sample which return is greater than return_delta
-    'update_delta': -60,  # if mean of return > update_delta, then update context dist
-    'task_buffer_size': 50,
-    'lambda': 0.2,  # LSP ratio
-    'ebu_ratio': 0,  # EBU ratio
+    'return_delta': 0.4,  # select traj sample which return is greater than return_delta
+    'update_delta': 0.5,  # if mean of return > update_delta, then update context dist
+    'target_return_threshold': 0.4,
+    'lambda': 0.25,
+    'task_buffer_size': 256,
     'noise_std': [0.5, 0.5],
-    'add_noise': True,
-    'enable_latent_selection_sample': True,
     'num_target_samples': 20,
     'update_freq': 1000,
+    'enable_lsp': True,
+    'enable_ebu': True,
     'encoder_max_grad_norm': None,
     'decoder_max_grad_norm': None,
     # --- VAE TRAINING ---
