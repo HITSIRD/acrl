@@ -5,7 +5,7 @@ import numpy as np
 from matplotlib import cm
 from misc.util import add_plot
 import matplotlib.pyplot as plt
-from acrl.experiments import MinigridBExperiment
+from acrl.experiments import MinigridBExperiment, MinigridEExperiment, MinigridFExperiment
 
 plt.rc('text.latex', preamble=r'\usepackage{amsmath}'
                               r'\newcommand{\currot}{\textsc{currot}}'
@@ -39,11 +39,11 @@ def performance_plot(ax=None, path=None, base_log_dir="logs", acrl_lambda=0.5):
     for method, color in zip(["self_paced", "random", "default", "wasserstein", "goal_gan", "alp_gmm",
                               "acl", "plr", "vds", "acrl"],
                              ["C0", "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9"]):
-        exp = MinigridBExperiment(base_log_dir, method, "ppo", {'ACRL_LAMBDA': acrl_lambda}, seed=1)
+        exp = MinigridFExperiment(base_log_dir, method, "ppo", {'ACRL_LAMBDA': acrl_lambda}, seed=1)
         log_dir = os.path.dirname(exp.get_log_dir())
         lines.append(add_plot(log_dir, ax, color))
 
-    ax.set_title('MiniGrid-B', fontsize=FONT_SIZE)
+    ax.set_title('MiniGrid-F', fontsize=FONT_SIZE)
     ax.set_ylabel(r"Episodic Return", fontsize=FONT_SIZE, labelpad=2.)
     ax.set_xlabel(r"Train Steps ($\times 10^3$)", fontsize=FONT_SIZE, labelpad=2.)
 
@@ -77,9 +77,9 @@ def performance_plot(ax=None, path=None, base_log_dir="logs", acrl_lambda=0.5):
 
 
 if __name__ == "__main__":
-    os.makedirs("./figures/minigrid_b", exist_ok=True)
+    os.makedirs("./figures/minigrid_f", exist_ok=True)
     # base_log_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "logs")
     base_log_dir = "./logs"
     acrl_lambda = 0.25
-    performance_plot(path='./figures/minigrid_b/' + str(acrl_lambda) + '.pdf', base_log_dir=base_log_dir,
+    performance_plot(path='./figures/minigrid_f/' + str(acrl_lambda) + '.pdf', base_log_dir=base_log_dir,
                      acrl_lambda=acrl_lambda)

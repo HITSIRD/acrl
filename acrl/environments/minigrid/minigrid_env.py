@@ -40,12 +40,12 @@ class MiniGridEnv(gym.Env):
         # Pick up an object
         pickup = 3
         # Drop an object
-        drop = 4
+        # drop = 4
         # Toggle/activate an object
-        toggle = 5
+        toggle = 4
 
         # Done completing task
-        done = 6
+        # done = 6
 
     def __init__(
         self,
@@ -595,11 +595,11 @@ class MiniGridEnv(gym.Env):
                         self.count += 1
 
         # Drop an object
-        elif action == self.actions.drop:
-            if not fwd_cell and self.carrying:
-                self.grid.set(fwd_pos[0], fwd_pos[1], self.carrying)
-                self.carrying.cur_pos = fwd_pos
-                self.carrying = None
+        # elif action == self.actions.drop:
+        #     if not fwd_cell and self.carrying:
+        #         self.grid.set(fwd_pos[0], fwd_pos[1], self.carrying)
+        #         self.carrying.cur_pos = fwd_pos
+        #         self.carrying = None
 
         # Toggle/activate an object
         elif action == self.actions.toggle:
@@ -789,10 +789,10 @@ class MiniGridEnv(gym.Env):
 
     def render(self, mode='human'):
         img = self.get_frame(self.highlight, self.tile_size, self.agent_pov)
-        # plt.imshow(img)
-        # plt.axis('off')
+        plt.imshow(img)
+        plt.axis('off')
         # plt.savefig('minigrid_easy.pdf', bbox_inches='tight', pad_inches=0)
-        # plt.show()
+        plt.show()
 
         if self.render_mode == "human":
             # if self.window is None:

@@ -14,7 +14,7 @@ from acrl.teachers.spl.wasserstein_interpolation import SamplingWassersteinInter
 class CurrOT(AbstractTeacher):
 
     def __init__(self, context_bounds, init_samples, target_sampler, perf_lb, epsilon, callback=None,
-                 wait_until_threshold=False):
+                 wait_until_threshold=False, post_sampler=None):
         self.context_bounds = context_bounds
         self.threshold_reached = False
         self.wait_until_threshold = wait_until_threshold
@@ -25,6 +25,8 @@ class CurrOT(AbstractTeacher):
         self.fail_context_buffer = []
         self.fail_return_buffer = []
         self.sampler = UniformSampler(self.context_bounds)
+
+        self.post_sampler = post_sampler
 
     def on_rollout_end(self, context, ret):
         self.sampler.update(context, ret)
@@ -68,9 +70,16 @@ class CurrOT(AbstractTeacher):
 
         print("Total update took: %.3e (Buffer/Update: %.3e/%.3e)" % (t_mo2 - t_up1, t_up2 - t_up1, t_mo2 - t_mo1))
 
-    def sample(self):
+
+    def _sample(self):
         sample = self.sampler(self.teacher.current_samples)
         return np.clip(sample, self.context_bounds[0], self.context_bounds[1])
+    def sample(self):
+        sample = self._sample()
+        if self.post_sampler is not None:
+            while not self.post_sampler(sample):
+                sample = self._sample()
+        return sample
 
     def save(self, path):
         self.teacher.save(path)

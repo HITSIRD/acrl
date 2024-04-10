@@ -14,17 +14,20 @@ from acrl.environments.minigrid.utils.util import get_area
 import matplotlib.pyplot as plt
 import numpy as np
 
-wall = [[1, 3], [2, 3], [3, 3], [4, 3], [5, 3], [6, 3], [6, 5], [6, 6], [6, 7], [6, 8]]
+# wall = [[3, 7], [3, 8], [3, 9], [3, 10], [4, 1], [4, 2], [4, 3], [4, 4], [4, 5], [6, 7], [6, 8], [6, 9], [7, 7], [8, 7],
+#         [5, 4], [6, 4], [7, 4], [8, 4], [9, 4]]
+wall = [[3, 7], [3, 8], [3, 9], [3, 10], [4, 1], [4, 2], [4, 3], [4, 4], [4, 5], [6, 7], [6, 8], [6, 9], [7, 7], [8, 7], [5, 4], [6, 4], [7, 4], [8, 4]]
 # lava = [[1, 3], [2, 3], [3, 3], [3, 4], [3, 5], [3, 6]]
-lava = [[3, 4], [3, 5], [3, 6]]
-door = [6, 5]
-obstacle = wall + lava + [door]
-key_ban_domain = get_area([1, 3], height=5, weight=5)
-key = [8, 8]
-start = [1, 1]
+# lava = [[1, 3], [2, 3], [7, 7], [8, 7], [9, 7], [10, 7]]
+lava = [[1, 3], [2, 3], [9, 7], [10, 7]]
+# door = [6, 4]
+obstacle = wall + lava
+# key_ban_domain = get_area([1, 3], height=5, weight=5)
+# key = [8, 8]
+start = [1, 10]
 
 
-class EEnv(MiniGridEnv):
+class FEnv(MiniGridEnv):
     """
     ## Description
 
@@ -79,9 +82,9 @@ class EEnv(MiniGridEnv):
 
     def __init__(self, size=8, max_steps: int | None = None, **kwargs):
         if max_steps is None:
-            max_steps = 75
+            max_steps = 100
 
-        self.task_dim = 4
+        self.task_dim = 2
         self.step_count = 0
         mission_space = MissionSpace(mission_func=self._gen_mission)
         super().__init__(
@@ -102,19 +105,13 @@ class EEnv(MiniGridEnv):
     def is_feasible(context):
         # Check that the context is not in or beyond the outer wall
         goal = [np.rint(context[0]), np.rint(context[1])]
-        key = [np.rint(context[2]), np.rint(context[3])]
-        if goal[0] < 1 or goal[0] > 8 or goal[1] < 1 or goal[1] > 8:
+        if goal[0] < 1 or goal[0] > 10 or goal[1] < 1 or goal[1] > 10:
             return False
-        if key[0] < 1 or key[0] > 8 or key[1] < 1 or key[1] > 8:
-            return False
-        if goal == start or key == start:
-            return False
-        if goal == key:
-            return False
-        # else:
-        #     return True
 
-        if obstacle.count(goal) == 0 and obstacle.count(key) == 0 and key_ban_domain.count(key) == 0:
+        if goal == start:
+            return False
+
+        if obstacle.count(goal) == 0:
             return True
         else:
             return False
@@ -133,16 +130,12 @@ class EEnv(MiniGridEnv):
         # Generate the surrounding walls
         self.grid.wall_rect(0, 0, width, height)
 
-        init_pos_x = 1
-        init_pos_y = 1
+        init_pos_x = start[0]
+        init_pos_y = start[1]
         agent_dir = 1
-        door_x = door[0]
-        door_y = door[1]
 
         goal_x = int(np.rint(task[0]))
         goal_y = int(np.rint(task[1]))
-        key_x = int(np.rint(task[2]))
-        key_y = int(np.rint(task[3]))
 
         for pos in wall:
             self.grid.set(pos[0], pos[1], Wall())
@@ -154,16 +147,10 @@ class EEnv(MiniGridEnv):
         # on the left side of the splitting wall
         self.place_agent(top=(init_pos_x, init_pos_y), size=(1, 1), rand_dir=False, agent_dir=agent_dir)
 
-        # Place a door in the wall
-        self.put_obj(Door("yellow", is_locked=True, is_open=False), door_x, door_y)
-
         # Place the goal at last to cover other object
         self.put_obj(Goal(), goal_x, goal_y)
         self.goal = (goal_x, goal_y)  # set goal position
-        self.task = (goal_x, goal_y, key_x, key_y)
-
-        # Place a yellow key on the left side
-        self.place_obj(obj=Key("yellow"), top=(key_x, key_y), size=(1, 1))
+        self.task = (goal_x, goal_y)
 
         self.mission = "use the key to open the door and then get to the goal"
 

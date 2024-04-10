@@ -14,17 +14,23 @@ from acrl.environments.minigrid.utils.util import get_area
 import matplotlib.pyplot as plt
 import numpy as np
 
-wall = [[1, 3], [2, 3], [3, 3], [4, 3], [5, 3], [6, 3], [6, 5], [6, 6], [6, 7], [6, 8]]
+wall = [[2, 5], [2, 10], [3, 5], [4, 5], [4, 10], [5, 1], [5, 2], [5, 4], [5, 5], [5, 6], [5, 8], [5, 9], [5, 10], [5, 11], [5, 13], [5, 14],
+        [6, 5], [6, 10], [7, 5], [7, 10], [8, 5], [8, 10], [9, 10],
+        [10, 1], [10, 3], [10, 4], [10, 5], [10, 6], [10, 7], [10, 9], [10, 10], [10, 11], [10, 12], [10, 13], [10, 14],
+        [11, 5], [11, 10], [12, 5], [12, 10], [14, 5], [14, 10]]
 # lava = [[1, 3], [2, 3], [3, 3], [3, 4], [3, 5], [3, 6]]
-lava = [[3, 4], [3, 5], [3, 6]]
-door = [6, 5]
+lava = [[1, 1], [1, 2], [1, 3], [1, 4], [1, 5], [1, 6], [1, 7], [1, 8], [1, 9], [1, 10], [1, 11], [1, 12], [1, 13], [1, 14],
+        [2, 1], [3, 1], [4, 1], [5, 1], [6, 1], [7, 1], [8, 1], [9, 1], [10, 1], [11, 1], [12, 1], [13, 1], [14, 1],
+        [14, 2], [14, 3], [14, 4], [14, 5], [14, 6], [14, 7], [14, 8], [14, 9],
+        [2, 14], [3, 14]]
+door = [5, 7]
 obstacle = wall + lava + [door]
 key_ban_domain = get_area([1, 3], height=5, weight=5)
-key = [8, 8]
-start = [1, 1]
+key = [7, 3]
+start = [14, 14]
 
 
-class EEnv(MiniGridEnv):
+class GEnv(MiniGridEnv):
     """
     ## Description
 
@@ -77,9 +83,9 @@ class EEnv(MiniGridEnv):
 
     """
 
-    def __init__(self, size=8, max_steps: int | None = None, **kwargs):
+    def __init__(self, size=16, max_steps: int | None = None, **kwargs):
         if max_steps is None:
-            max_steps = 75
+            max_steps = 200
 
         self.task_dim = 4
         self.step_count = 0
@@ -103,10 +109,11 @@ class EEnv(MiniGridEnv):
         # Check that the context is not in or beyond the outer wall
         goal = [np.rint(context[0]), np.rint(context[1])]
         key = [np.rint(context[2]), np.rint(context[3])]
-        if goal[0] < 1 or goal[0] > 8 or goal[1] < 1 or goal[1] > 8:
+        if goal[0] < 1 or goal[0] > 14 or goal[1] < 1 or goal[1] > 14:
             return False
-        if key[0] < 1 or key[0] > 8 or key[1] < 1 or key[1] > 8:
+        if key[0] < 1 or key[0] > 14 or key[1] < 1 or key[1] > 14:
             return False
+
         if goal == start or key == start:
             return False
         if goal == key:
@@ -133,9 +140,9 @@ class EEnv(MiniGridEnv):
         # Generate the surrounding walls
         self.grid.wall_rect(0, 0, width, height)
 
-        init_pos_x = 1
-        init_pos_y = 1
-        agent_dir = 1
+        init_pos_x = 14
+        init_pos_y = 14
+        agent_dir = 3
         door_x = door[0]
         door_y = door[1]
 

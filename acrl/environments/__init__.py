@@ -42,6 +42,18 @@ register(
     kwargs={"size": 10},
 )
 
+register(
+    id="MiniGrid-F-v1",
+    entry_point="acrl.environments.minigrid.envs:FEnv",
+    kwargs={"size": 12},
+)
+
+register(
+    id="MiniGrid-G-v1",
+    entry_point="acrl.environments.minigrid.envs:GEnv",
+    kwargs={"size": 16},
+)
+
 robots = ['Point', 'Ant', 'Swimmer']
 # task_types = ['Maze', 'Maze1', 'Maze2', 'Push', 'Fall', 'Block', 'BlockMaze']
 task_types = ['Maze', 'Maze1', 'Maze2']

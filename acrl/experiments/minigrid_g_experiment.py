@@ -4,7 +4,7 @@ import torch
 import numpy as np
 from stable_baselines3.common.vec_env import DummyVecEnv
 
-from acrl.environments.minigrid.envs import EEnv
+from acrl.environments.minigrid.envs import GEnv
 from acrl.experiments.abstract_experiment import AbstractExperiment, Learner
 from acrl.teachers.goal_gan import GoalGAN, GoalGANWrapper
 from acrl.teachers.alp_gmm import ALPGMM, ALPGMMWrapper
@@ -19,7 +19,7 @@ from acrl.teachers.sampler import Subsampler, MinigridSampler
 from scipy.stats import multivariate_normal
 from acrl.util.device import device_type
 
-from acrl.teachers.acrl.config.minigrid_e import config
+from acrl.teachers.acrl.config.minigrid_g import config
 
 
 def context_post_processing(context):
@@ -27,19 +27,19 @@ def context_post_processing(context):
     return context
 
 
-class MinigridEExperiment(AbstractExperiment):
-    TARGET_MEANS = np.array([1, 4, 8, 8])
+class MinigridGExperiment(AbstractExperiment):
+    TARGET_MEANS = np.array([6, 14, 7, 3])
     TARGET_VARIANCES = np.diag([1e-4, 1e-4, 1e-4, 1e-4])
 
     LOWER_CONTEXT_BOUNDS = np.array([0.5001, 0.5001, 0.5001, 0.5001])
-    UPPER_CONTEXT_BOUNDS = np.array([8.4999, 8.4999, 8.4999, 8.4999])
+    UPPER_CONTEXT_BOUNDS = np.array([14.4999, 14.4999, 14.4999, 14.4999])
 
     def target_sampler(self, n=None, rng=None):
-        target = np.array([1, 4, 8, 8])
+        target = np.array([6, 14, 7, 3])
         if n is None:
             return target
         else:
-            return np.repeat([target], n, axis=0)
+            return np.repeat(target, n, axis=0)
 
     def target_log_likelihood(self, cs):
         p0 = multivariate_normal.logpdf(cs, self.TARGET_MEANS[0], self.TARGET_VARIANCES[0])
@@ -49,7 +49,7 @@ class MinigridEExperiment(AbstractExperiment):
         # There is another factor of 0.5 since exactly half of the distribution is out of bounds
         return np.log(0.5 * 0.5 * (np.exp(p0 - pmax) + np.exp(p1 - pmax))) + pmax
 
-    INITIAL_MEAN = np.array([8., 3., 4., 1.])
+    INITIAL_MEAN = np.array([9., 8., 13., 9.])
     # INITIAL_VARIANCE = np.diag(np.square([0.5, 0.5, 0.5, 0.5]))
     INITIAL_VARIANCE = np.array([0.5, 0.5, 0.5, 0.5])
 
@@ -60,7 +60,7 @@ class MinigridEExperiment(AbstractExperiment):
     METRIC_EPS = 1.0
     EP_PER_UPDATE = 40
 
-    STEPS_PER_ITER = 2500
+    STEPS_PER_ITER = 10000
     DISCOUNT_FACTOR = 0.99
     LAM = 0.99
 
@@ -91,10 +91,10 @@ class MinigridEExperiment(AbstractExperiment):
     def __init__(self, base_log_dir, curriculum_name, learner_name, parameters, seed):
         super().__init__(base_log_dir, curriculum_name, learner_name, parameters, seed)
         self.eval_env, self.vec_eval_env = self.create_environment(evaluation=True)
-        self.env = gym.make('MiniGrid-E-v1')
+        self.env = gym.make('MiniGrid-G-v1')
 
     def create_environment(self, evaluation=False):
-        env = gym.make('MiniGrid-E-v1')
+        env = gym.make('MiniGrid-G-v1')
 
         config['action_dim'] = env.action_space.n
         config['context_dim'] = self.INITIAL_MEAN.shape[0]
@@ -110,7 +110,7 @@ class MinigridEExperiment(AbstractExperiment):
         elif self.curriculum.alp_gmm():
             teacher = ALPGMM(self.LOWER_CONTEXT_BOUNDS.copy(), self.UPPER_CONTEXT_BOUNDS.copy(), seed=self.seed,
                              fit_rate=self.AG_FIT_RATE[self.learner], random_task_ratio=self.AG_P_RAND[self.learner],
-                             max_size=self.AG_MAX_SIZE[self.learner], post_sampler=EEnv.is_feasible)
+                             max_size=self.AG_MAX_SIZE[self.learner], post_sampler=GEnv.is_feasible)
             env = ALPGMMWrapper(env, teacher, self.DISCOUNT_FACTOR, context_visible=True,
                                 context_post_processing=context_post_processing)
         elif self.curriculum.goal_gan():
@@ -119,7 +119,7 @@ class MinigridEExperiment(AbstractExperiment):
                               state_noise_level=self.GG_NOISE_LEVEL[self.learner], success_distance_threshold=0.01,
                               update_size=self.GG_FIT_RATE[self.learner], n_rollouts=2, goid_lb=0.25, goid_ub=0.75,
                               p_old=self.GG_P_OLD[self.learner], pretrain_samples=samples,
-                              post_sampler=EEnv.is_feasible)
+                              post_sampler=GEnv.is_feasible)
             env = GoalGANWrapper(env, teacher, self.DISCOUNT_FACTOR, context_visible=True,
                                  context_post_processing=context_post_processing)
         elif self.curriculum.self_paced() or self.curriculum.wasserstein():
@@ -135,24 +135,24 @@ class MinigridEExperiment(AbstractExperiment):
                                                                 [bins, bins]))
         elif self.curriculum.plr():
             teacher = PLR(self.LOWER_CONTEXT_BOUNDS, self.UPPER_CONTEXT_BOUNDS, self.PLR_REPLAY_RATE,
-                          self.PLR_BUFFER_SIZE, self.PLR_BETA, self.PLR_RHO, post_sampler=EEnv.is_feasible)
+                          self.PLR_BUFFER_SIZE, self.PLR_BETA, self.PLR_RHO, post_sampler=GEnv.is_feasible)
             env = PLRWrapper(env, teacher, self.DISCOUNT_FACTOR, context_visible=True)
         elif self.curriculum.vds():
             teacher = VDS(self.LOWER_CONTEXT_BOUNDS, self.UPPER_CONTEXT_BOUNDS, self.DISCOUNT_FACTOR, self.VDS_NQ,
                           q_train_config={"replay_size": 5 * self.STEPS_PER_ITER, "lr": self.VDS_LR,
                                           "n_epochs": self.VDS_EPOCHS, "batches_per_epoch": self.VDS_BATCHES,
-                                          "steps_per_update": self.STEPS_PER_ITER}, post_sampler=EEnv.is_feasible)
+                                          "steps_per_update": self.STEPS_PER_ITER}, post_sampler=GEnv.is_feasible)
             env = VDSWrapper(env, teacher, self.DISCOUNT_FACTOR, context_visible=True,
                              context_post_processing=context_post_processing)
         elif self.curriculum.acrl():
             teacher = ACRL(self.TARGET_MEANS.copy(), self.INITIAL_MEAN.copy(), self.INITIAL_VARIANCE.copy(),
                            self.LOWER_CONTEXT_BOUNDS, self.UPPER_CONTEXT_BOUNDS, config, self.get_log_dir(),
-                           post_sampler=EEnv.is_feasible)
+                           post_sampler=GEnv.is_feasible)
             env = ACRLWrapper(env, teacher, self.DISCOUNT_FACTOR, episodes_per_update=self.EP_PER_UPDATE,
                               context_visible=True, context_post_processing=context_post_processing)
         elif self.curriculum.random():
             teacher = MinigridSampler(self.LOWER_CONTEXT_BOUNDS, self.UPPER_CONTEXT_BOUNDS,
-                                      post_sampler=EEnv.is_feasible)
+                                      post_sampler=GEnv.is_feasible)
             env = BaseWrapper(env, teacher, self.DISCOUNT_FACTOR, context_visible=True,
                               context_post_processing=context_post_processing)
         else:
@@ -204,7 +204,7 @@ class MinigridEExperiment(AbstractExperiment):
             return CurrOT(bounds, init_samples, self.target_sampler, self.DELTA, self.METRIC_EPS)
 
     def get_env_name(self):
-        return "minigrid_E"
+        return "minigrid_G"
 
     def evaluate_learner(self, path):
         model_load_path = os.path.join(path, "model.zip")
