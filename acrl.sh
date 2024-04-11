@@ -44,8 +44,8 @@
 #/home/wenyongyan/文档/acrl/venv/bin/python run.py --type acrl --learner ppo --env minigrid-e --seed 4 --ACRL_LAMBDA 0.25
 #/home/wenyongyan/文档/acrl/venv/bin/python run.py --type acrl --learner ppo --env minigrid-e --seed 5 --ACRL_LAMBDA 0.25
 
-#/home/wenyongyan/文档/acrl/venv/bin/python run.py --type acrl --learner ppo --env minigrid-f --seed 1 --ACRL_LAMBDA 0.25
-#/home/wenyongyan/文档/acrl/venv/bin/python run.py --type acrl --learner ppo --env minigrid-f --seed 2 --ACRL_LAMBDA 0.25
-#/home/wenyongyan/文档/acrl/venv/bin/python run.py --type acrl --learner ppo --env minigrid-f --seed 3 --ACRL_LAMBDA 0.25
-#/home/wenyongyan/文档/acrl/venv/bin/python run.py --type acrl --learner ppo --env minigrid-f --seed 4 --ACRL_LAMBDA 0.25
-#/home/wenyongyan/文档/acrl/venv/bin/python run.py --type acrl --learner ppo --env minigrid-f --seed 5 --ACRL_LAMBDA 0.25
+/home/wenyongyan/文档/acrl/venv/bin/python run.py --type acrl --learner ppo --env minigrid-g --seed 1 --ACRL_LAMBDA 0.25
+/home/wenyongyan/文档/acrl/venv/bin/python run.py --type acrl --learner ppo --env minigrid-g --seed 2 --ACRL_LAMBDA 0.25
+/home/wenyongyan/文档/acrl/venv/bin/python run.py --type acrl --learner ppo --env minigrid-g --seed 3 --ACRL_LAMBDA 0.25
+/home/wenyongyan/文档/acrl/venv/bin/python run.py --type acrl --learner ppo --env minigrid-g --seed 4 --ACRL_LAMBDA 0.25
+/home/wenyongyan/文档/acrl/venv/bin/python run.py --type acrl --learner ppo --env minigrid-g --seed 5 --ACRL_LAMBDA 0.25

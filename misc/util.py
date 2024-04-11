@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def add_plot(base_log_dir, ax, color, max_seed=None, marker="o", markevery=3):
+def add_plot(base_log_dir, ax, color, marker="o", markevery=3, iter_steps=1, max_seed=None):
     iterations = []
     seed_performances = []
 
@@ -37,9 +37,10 @@ def add_plot(base_log_dir, ax, color, max_seed=None, marker="o", markevery=3):
         print(seed_performances)
         print("Found %d completed seeds" % len(seed_performances))
               
-        ratio = 0.5
+        ratio = 0.707
         min_length = np.min([len(seed_performance) for seed_performance in seed_performances])
-        iterations = iterations[0: min_length]
+
+        steps = iterations[0: min_length] * iter_steps
         seed_performances = [seed_performance[0: min_length] for seed_performance in seed_performances]
 
         mid = np.mean(seed_performances, axis=0)
@@ -49,8 +50,8 @@ def add_plot(base_log_dir, ax, color, max_seed=None, marker="o", markevery=3):
         low = mid - std
         high = mid + std
 
-        l, = ax.plot(iterations, mid, color=color, linewidth=1.5)
-        ax.fill_between(iterations, low, high, color=color, linewidth=0, alpha=0.1)
+        l, = ax.plot(steps, mid, color=color, linewidth=1.2)
+        ax.fill_between(steps, low, high, color=color, linewidth=0, alpha=0.1)
         return l
     else:
         return None

@@ -9,6 +9,7 @@ from .minigrid_d_experiment import MinigridDExperiment
 from .minigrid_e_experiment import MinigridEExperiment
 from .minigrid_f_experiment import MinigridFExperiment
 from .minigrid_g_experiment import MinigridGExperiment
+from .minigrid_h_experiment import MinigridHExperiment
 from .fetchpush_experiment import FetchPushExperiment
 from .abstract_experiment import CurriculumType, Learner
 
