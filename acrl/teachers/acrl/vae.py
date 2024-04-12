@@ -496,7 +496,7 @@ class RolloutStorageVAE(object):
     def __len__(self):
         return self.buffer_len
 
-    def get_batch(self, batchsize=5, replace=False, return_delta=0):
+    def get_batch(self, batchsize=5, replace=False, return_delta=-np.inf):
         batchsize = min(self.buffer_len, batchsize)
         index = np.argwhere(self.episode_return > return_delta).flatten()
         # assert index.size > 0

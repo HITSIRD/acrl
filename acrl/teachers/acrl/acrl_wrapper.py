@@ -51,9 +51,7 @@ class ACRLWrapper(BaseWrapper):
     def step(self, action, update=True, wo_context=False, insert=True):
         step = self.env.step(action)
         obs = step[0]
-        # print('achieved')
-        # print(obs['achieved_goal'])
-        # print(obs['desired_goal'])
+
         if isinstance(step[0], dict):
             obs = step[0]['observation']
 
@@ -104,3 +102,13 @@ class ACRLWrapper(BaseWrapper):
         # We currently rely on the learner being set on the environment after its creation
         self.episode_count += 1
         self.teacher.update_distribution(self.episode_count, self)
+
+    def get_encountered_contexts(self, reset=None, batch_size=None):
+        if batch_size is None:
+            return self.context_trace_buffer.read_buffer(reset=reset)
+        else:
+            buffer = self.context_trace_buffer.read_buffer(reset=reset)
+            ret, context = np.array(buffer[0]), np.array(buffer[2])
+            batch_size = min(len(ret), batch_size)
+            index = np.random.choice(len(ret), batch_size)
+            return context[index], ret[index]

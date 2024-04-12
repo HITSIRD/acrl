@@ -536,12 +536,16 @@ class AbstractExperiment(ABC):
 
         # if not os.path.exists(os.path.join(log_dir, "performance.pkl")):
         seed_performance = []
+        seed_success = []
         for iteration_dir in sorted_iteration_dirs:
             iteration_log_dir = os.path.join(log_dir, iteration_dir)
-            perf = self.evaluate_learner(iteration_log_dir)
-            print("Evaluated " + iteration_dir + ": " + str(perf))
+            perf, success = self.evaluate_learner(iteration_log_dir)
+            print("Evaluated " + iteration_dir + ": " + str(perf) + '|' + str(success))
             seed_performance.append(perf)
+            seed_success.append(success)
 
         seed_performance = np.array(seed_performance)
         with open(os.path.join(log_dir, "performance.pkl"), "wb") as f:
             pickle.dump(seed_performance, f)
+        with open(os.path.join(log_dir, "success.pkl"), "wb") as f:
+            pickle.dump(seed_success, f)

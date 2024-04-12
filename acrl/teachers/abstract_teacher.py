@@ -136,7 +136,7 @@ class BaseWrapper(gym.Env):
             mean_reward = np.mean(rewards)
             mean_disc_reward = np.mean(disc_rewards)
             mean_step_length = np.mean(steps)
-            success_rate = len(np.where(np.array(rewards) > -50)[0]) / len(rewards)
+            success_rate = len(np.where(np.array(rewards) > 0.75)[0]) / len(rewards)
 
             return mean_reward, mean_disc_reward, mean_step_length, np.sum(steps), success_rate
 

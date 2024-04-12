@@ -28,14 +28,14 @@ def context_post_processing(context):
 
 
 class MinigridGExperiment(AbstractExperiment):
-    TARGET_MEANS = np.array([6, 14, 7, 3])
-    TARGET_VARIANCES = np.diag([1e-4, 1e-4, 1e-4, 1e-4])
+    TARGET_MEANS = np.array([4, 14])
+    TARGET_VARIANCES = np.diag([1e-4, 1e-4])
 
-    LOWER_CONTEXT_BOUNDS = np.array([0.5001, 0.5001, 0.5001, 0.5001])
-    UPPER_CONTEXT_BOUNDS = np.array([14.4999, 14.4999, 14.4999, 14.4999])
+    LOWER_CONTEXT_BOUNDS = np.array([0.5, 0.5])
+    UPPER_CONTEXT_BOUNDS = np.array([14.5, 14.5])
 
     def target_sampler(self, n=None, rng=None):
-        target = np.array([6, 14, 7, 3])
+        target = np.array([4, 14])
         if n is None:
             return target
         else:
@@ -49,18 +49,18 @@ class MinigridGExperiment(AbstractExperiment):
         # There is another factor of 0.5 since exactly half of the distribution is out of bounds
         return np.log(0.5 * 0.5 * (np.exp(p0 - pmax) + np.exp(p1 - pmax))) + pmax
 
-    INITIAL_MEAN = np.array([10., 8., 13., 10.])
+    INITIAL_MEAN = np.array([13, 11.])
     # INITIAL_VARIANCE = np.diag(np.square([0.5, 0.5, 0.5, 0.5]))
-    INITIAL_VARIANCE = np.array([0.5, 0.5, 0.5, 0.5])
+    INITIAL_VARIANCE = np.array([0.5, 0.5])
 
-    STD_LOWER_BOUND = np.array([0.01, 0.01, 0.01, 0.01])
+    STD_LOWER_BOUND = np.array([0.01, 0.01])
     KL_THRESHOLD = 8000.
     KL_EPS = 0.25
     DELTA = 0.3
     METRIC_EPS = 1.0
     EP_PER_UPDATE = 40
 
-    STEPS_PER_ITER = 10000
+    STEPS_PER_ITER = 5000
     DISCOUNT_FACTOR = 0.99
     LAM = 0.99
 
@@ -114,7 +114,7 @@ class MinigridGExperiment(AbstractExperiment):
             env = ALPGMMWrapper(env, teacher, self.DISCOUNT_FACTOR, context_visible=True,
                                 context_post_processing=context_post_processing)
         elif self.curriculum.goal_gan():
-            samples = np.random.uniform(self.LOWER_CONTEXT_BOUNDS, self.UPPER_CONTEXT_BOUNDS, size=(1000, 4))
+            samples = np.random.uniform(self.LOWER_CONTEXT_BOUNDS, self.UPPER_CONTEXT_BOUNDS, size=(1000, 2))
             teacher = GoalGAN(self.LOWER_CONTEXT_BOUNDS.copy(), self.UPPER_CONTEXT_BOUNDS.copy(),
                               state_noise_level=self.GG_NOISE_LEVEL[self.learner], success_distance_threshold=0.01,
                               update_size=self.GG_FIT_RATE[self.learner], n_rollouts=2, goid_lb=0.25, goid_ub=0.75,
@@ -216,4 +216,5 @@ class MinigridGExperiment(AbstractExperiment):
                 action = model.step(obs, state=None, deterministic=False)
                 obs, rewards, done, infos = self.vec_eval_env.step(action)
 
-        return self.eval_env.get_statistics()[0]
+        statistics = self.eval_env.get_statistics()
+        return statistics[0], statistics[4]

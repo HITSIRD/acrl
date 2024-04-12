@@ -22,12 +22,14 @@ def add_plot(base_log_dir, ax, color, marker="o", markevery=3, iter_steps=1, max
         print(seed_log_dir)
 
         if os.path.exists(os.path.join(seed_log_dir, "performance.pkl")):
+        # if os.path.exists(os.path.join(seed_log_dir, "success.pkl")):
             iteration_dirs = [d for d in os.listdir(seed_log_dir) if d.startswith("iteration-")]
             unsorted_iterations = np.array([int(d[len("iteration-"):]) for d in iteration_dirs])
             idxs = np.argsort(unsorted_iterations)
             iterations = unsorted_iterations[idxs]
 
             with open(os.path.join(seed_log_dir, "performance.pkl"), "rb") as f:
+            # with open(os.path.join(seed_log_dir, "success.pkl"), "rb") as f:
                 seed_performances.append(pickle.load(f))
         else:
             pass

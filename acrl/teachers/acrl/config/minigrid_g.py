@@ -3,13 +3,13 @@
 config = {
     # --- CURRICULUM ---
     'step_size': 0.9,
-    'return_delta': 0.4,  # select traj sample which return is greater than return_delta
-    'update_delta': 0.5,  # if mean of return > update_delta, then update context dist
-    'target_return_threshold': 0.3,
+    'return_delta': 0.2,  # select traj sample which return is greater than return_delta
+    'update_delta': 0.3,  # if mean of return > update_delta, then update context dist
+    'target_return_threshold': 0.2,
     'task_buffer_size': 256,
     'lambda': 0.25,  # LSP ratio
-    'noise_std': [0.5, 0.5, 0.5, 0.5],
-    'num_target_samples': 20,
+    'noise_std': [0.5, 0.5],
+    'num_target_samples': 30,
     'update_freq': 250,
     'enable_lsp': True,
     'enable_ebu': True,
@@ -61,6 +61,12 @@ config = {
     'task_decoder_layers': [128, 128],
     'task_pred_type': 'param',
     'task_batch_num_trajectories': 128,
+
+    # --- EVALUATOR ---
+    'evaluator_batchsize': 64,
+    'lr_evaluator': 0.001,
+    'num_evaluator_update': 16,
+    'evaluator_layers': [128, 128, 128],
 
     # --- ABLATIONS ---
     # for the VAE

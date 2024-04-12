@@ -38,11 +38,11 @@ class MiniGridEnv(gym.Env):
         right = 1
         forward = 2
         # Pick up an object
-        pickup = 3
+        # pickup = 3
         # Drop an object
         # drop = 4
         # Toggle/activate an object
-        toggle = 4
+        # toggle = 5
 
         # Done completing task
         # done = 6
@@ -595,11 +595,11 @@ class MiniGridEnv(gym.Env):
                         self.count += 1
 
         # Drop an object
-        # elif action == self.actions.drop:
-        #     if not fwd_cell and self.carrying:
-        #         self.grid.set(fwd_pos[0], fwd_pos[1], self.carrying)
-        #         self.carrying.cur_pos = fwd_pos
-        #         self.carrying = None
+        elif action == self.actions.drop:
+            if not fwd_cell and self.carrying:
+                self.grid.set(fwd_pos[0], fwd_pos[1], self.carrying)
+                self.carrying.cur_pos = fwd_pos
+                self.carrying = None
 
         # Toggle/activate an object
         elif action == self.actions.toggle:

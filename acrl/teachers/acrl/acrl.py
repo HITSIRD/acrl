@@ -6,9 +6,10 @@ import torch
 
 from acrl.environments.minigrid.envs import AEnv
 from acrl.teachers.abstract_teacher import AbstractTeacher
+from acrl.teachers.acrl.evaluator import Evaluator
 from acrl.teachers.acrl.util import sample_trajectory, trajectory_embedding, get_latent_map
 from acrl.teachers.acrl.vae import VAE
-from acrl.teachers.sampler import MinigridSampler
+from acrl.teachers.acrl.evaluator import Evaluator
 from acrl.teachers.dummy_teachers import UniformSampler
 from acrl.util.device import device
 
@@ -28,10 +29,12 @@ class ACRL(AbstractTeacher):
         self.context_ub = context_ub
         # self.uniform_sampler = MinigridSampler(self.context_lb, self.context_ub)
         self.uniform_sampler = UniformSampler(self.context_lb, self.context_ub)
-        self.teacher = LatentSpacePrediction(initial_mean, initial_std, self.target, self.uniform_sampler,
-                                             self.config)
         self.vae = VAE(self.config)
+        self.evaluator = Evaluator(self.config)
         self.policy = None  # sample trajectory to train VAE
+
+        self.teacher = LatentSpacePrediction(initial_mean, initial_std, self.target, self.uniform_sampler,
+                                             self.evaluator, self.config)
 
         self.post_sampler = post_sampler
 
@@ -43,11 +46,13 @@ class ACRL(AbstractTeacher):
 
     def update_distribution(self, episode_count, env):
         if episode_count % self.config['update_freq'] == 0:
-
             ret = env.get_encountered_contexts(reset=False)[0]
             size = len(ret)
             ret = np.array(ret)[-min(size, self.config['task_buffer_size']):]
             print(f'mean of return: {np.mean(ret)}({np.std(ret)})')
+
+            self.evaluator.update(env.get_encountered_contexts)
+            self.evaluator.plot(episode_count)
 
             #  evaluate current policy
             # if hasattr(env.env, 'plot_evaluate_task'):
@@ -99,7 +104,7 @@ class ACRL(AbstractTeacher):
 
 
 class LatentSpacePrediction:
-    def __init__(self, init_mean, init_std, target, uniform_sampler, config):
+    def __init__(self, init_mean, init_std, target, uniform_sampler, evaluator, config):
         self.config = config
         self.init_mean = torch.from_numpy(np.array(init_mean))
         self.init_std = torch.from_numpy(np.array(init_std))
@@ -123,6 +128,7 @@ class LatentSpacePrediction:
         self.target_return = -np.inf
 
         self.uniform_sampler = uniform_sampler
+        self.evaluator = evaluator
         self.initialize(self.uniform_sampler)
 
     def initialize(self, sampler):
@@ -144,7 +150,7 @@ class LatentSpacePrediction:
 
         if np.random.random() > 0.05:
             context = self.current_tasks[
-                np.random.randint(len(buffer))] if np.random.random() < self.update_lambda else self.uniform_sampler()
+                np.random.randint(len(buffer))] if np.random.random() < self.update_lambda else self.eval_sampler()
         else:
             context = self.target
         # context = self.current_tasks[np.random.randint(len(buffer))]
@@ -153,6 +159,24 @@ class LatentSpacePrediction:
             context = context.numpy()
         context = np.clip(context, self.uniform_sampler.lower_bound, self.uniform_sampler.upper_bound)
 
+        return context
+
+    def eval_sampler(self):
+        accept = False
+        context = self.uniform_sampler()
+        if self.evaluator.available:
+            while not accept:
+                pred_ret, min_ret, max_ret = self.evaluator.predict(context)
+                min_ret = 0.05
+                max_ret = 0.25
+                pred_ret = np.clip(pred_ret, min_ret, max_ret)
+                # if pred_ret < np.random.random():
+                if (pred_ret - min_ret) / (max_ret - min_ret) < np.random.random():
+                    # print(context)
+                    # print(f'{pred_ret}\t{min_ret}\t{max_ret}')
+                    accept = True
+                else:
+                    context = self.uniform_sampler()
         return context
 
     def update(self, env, policy, vae):
@@ -188,8 +212,8 @@ class LatentSpacePrediction:
 
         task_latent = torch.stack(task_latent)
         task_returns = torch.from_numpy(np.array(task_returns)).cpu().numpy().flatten()
-        # index = np.argwhere((task_returns > self.return_delta) & (task_returns < -20)).flatten()
-        index = np.argwhere(task_returns > self.return_delta).flatten()
+        index = np.argwhere((task_returns > self.return_delta) & (task_returns < 0.9)).flatten()
+        # index = np.argwhere(task_returns > self.return_delta).flatten()
         if index.shape[0] == 0:
             print('nothing to update')
             return

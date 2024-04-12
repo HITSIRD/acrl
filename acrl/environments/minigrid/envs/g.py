@@ -14,19 +14,21 @@ from acrl.environments.minigrid.utils.util import get_area
 import matplotlib.pyplot as plt
 import numpy as np
 
-wall = [[2, 5], [2, 10], [3, 5], [4, 5], [4, 10], [5, 1], [5, 2], [5, 4], [5, 5], [5, 6], [5, 8], [5, 9], [5, 10], [5, 11], [5, 13], [5, 14],
-        [6, 5], [6, 10], [7, 5], [7, 10], [8, 5], [8, 10], [9, 10],
-        [10, 1], [10, 3], [10, 4], [10, 5], [10, 6], [10, 7], [10, 9], [10, 10], [10, 11], [10, 12], [10, 13], [10, 14],
-        [11, 5], [11, 10], [12, 5], [12, 10], [14, 5], [14, 10]]
+wall = [[2, 5], [2, 10], [3, 5], [3, 10], [4, 5], [4, 10], [5, 1], [5, 2], [5, 4], [5, 5], [5, 6], [5, 8], [5, 9], [5, 10], [5, 11], [5, 13], [5, 14],
+        [6, 5], [7, 5], [7, 10], [8, 5], [8, 10], [9, 10],
+        [10, 1], [10, 3], [10, 4], [10, 5], [10, 6], [10, 7], [10, 8], [10, 9], [10, 10], [10, 11], [10, 12], [10, 13], [10, 14],
+        [11, 5], [11, 10], [12, 10], [13, 5], [14, 5], [14, 10]]
 # lava = [[1, 3], [2, 3], [3, 3], [3, 4], [3, 5], [3, 6]]
 lava = [[1, 1], [1, 2], [1, 3], [1, 4], [1, 5], [1, 6], [1, 7], [1, 8], [1, 9], [1, 10], [1, 11], [1, 12], [1, 13], [1, 14],
         [2, 1], [3, 1], [4, 1], [5, 1], [6, 1], [7, 1], [8, 1], [9, 1], [10, 1], [11, 1], [12, 1], [13, 1], [14, 1],
         [14, 2], [14, 3], [14, 4], [14, 5], [14, 6], [14, 7], [14, 8], [14, 9],
         [2, 14], [3, 14]]
-door = [5, 7]
-obstacle = wall + lava + [door]
-key_ban_domain = get_area([1, 3], height=5, weight=5)
-key = [7, 3]
+# door = [5, 7]
+obstacle = wall + lava
+# key_ban_domain1 = get_area([1, 5], height=10, weight=5)
+# key_ban_domain2 = get_area([6, 10], height=5, weight=5)
+# key_ban_domain = key_ban_domain1 + key_ban_domain2
+# key = [7, 3]
 start = [14, 14]
 
 
@@ -85,9 +87,9 @@ class GEnv(MiniGridEnv):
 
     def __init__(self, size=16, max_steps: int | None = None, **kwargs):
         if max_steps is None:
-            max_steps = 200
+            max_steps = 100
 
-        self.task_dim = 4
+        self.task_dim = 2
         self.step_count = 0
         mission_space = MissionSpace(mission_func=self._gen_mission)
         super().__init__(
@@ -108,20 +110,15 @@ class GEnv(MiniGridEnv):
     def is_feasible(context):
         # Check that the context is not in or beyond the outer wall
         goal = [np.rint(context[0]), np.rint(context[1])]
-        key = [np.rint(context[2]), np.rint(context[3])]
         if goal[0] < 1 or goal[0] > 14 or goal[1] < 1 or goal[1] > 14:
             return False
-        if key[0] < 1 or key[0] > 14 or key[1] < 1 or key[1] > 14:
-            return False
 
-        if goal == start or key == start:
-            return False
-        if goal == key:
+        if goal == start:
             return False
         # else:
         #     return True
 
-        if obstacle.count(goal) == 0 and obstacle.count(key) == 0 and key_ban_domain.count(key) == 0:
+        if obstacle.count(goal) == 0:
             return True
         else:
             return False
@@ -143,13 +140,9 @@ class GEnv(MiniGridEnv):
         init_pos_x = 14
         init_pos_y = 14
         agent_dir = 3
-        door_x = door[0]
-        door_y = door[1]
 
         goal_x = int(np.rint(task[0]))
         goal_y = int(np.rint(task[1]))
-        key_x = int(np.rint(task[2]))
-        key_y = int(np.rint(task[3]))
 
         for pos in wall:
             self.grid.set(pos[0], pos[1], Wall())
@@ -162,15 +155,15 @@ class GEnv(MiniGridEnv):
         self.place_agent(top=(init_pos_x, init_pos_y), size=(1, 1), rand_dir=False, agent_dir=agent_dir)
 
         # Place a door in the wall
-        self.put_obj(Door("yellow", is_locked=True, is_open=False), door_x, door_y)
+        # self.put_obj(Door("yellow", is_locked=True, is_open=False), door_x, door_y)
 
         # Place the goal at last to cover other object
         self.put_obj(Goal(), goal_x, goal_y)
         self.goal = (goal_x, goal_y)  # set goal position
-        self.task = (goal_x, goal_y, key_x, key_y)
+        self.task = (goal_x, goal_y)
 
         # Place a yellow key on the left side
-        self.place_obj(obj=Key("yellow"), top=(key_x, key_y), size=(1, 1))
+        # self.place_obj(obj=Key("yellow"), top=(key_x, key_y), size=(1, 1))
 
         self.mission = "use the key to open the door and then get to the goal"
 
