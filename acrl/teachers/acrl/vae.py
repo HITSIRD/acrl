@@ -498,7 +498,7 @@ class RolloutStorageVAE(object):
 
     def get_batch(self, batchsize=5, replace=False, return_delta=-np.inf):
         batchsize = min(self.buffer_len, batchsize)
-        index = np.argwhere(self.episode_return > return_delta).flatten()
+        index = np.argwhere(self.episode_return[:self.buffer_len] > return_delta).flatten()
         # assert index.size > 0
         size = min(len(index), batchsize)
         if index.size > 0:

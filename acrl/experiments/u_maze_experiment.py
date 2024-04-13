@@ -40,9 +40,12 @@ class UMazeExperiment(AbstractExperiment):
     LOWER_CONTEXT_BOUNDS = np.array([-2., -2.])
     UPPER_CONTEXT_BOUNDS = np.array([10., 10.])
 
-    def target_sampler(self, rng=None):
-        target = np.array([0., 8.])
-        return target
+    def target_sampler(self, n=None, rng=None):
+        target = np.array([0, 8])
+        if n is None:
+            return target
+        else:
+            return np.repeat([target], n, axis=0)
 
     def target_log_likelihood(self, cs):
         p0 = multivariate_normal.logpdf(cs, self.TARGET_MEANS[0], self.TARGET_VARIANCES[0])
@@ -58,7 +61,7 @@ class UMazeExperiment(AbstractExperiment):
     STD_LOWER_BOUND = np.array([0.01, 0.01])
     KL_THRESHOLD = 8000.
     KL_EPS = 0.25
-    DELTA = 0.3
+    DELTA = -70
     METRIC_EPS = 1.0
     EP_PER_UPDATE = 40
 
@@ -126,7 +129,7 @@ class UMazeExperiment(AbstractExperiment):
         elif self.curriculum.self_paced() or self.curriculum.wasserstein():
             teacher = self.create_self_paced_teacher(with_callback=False)
             env = SelfPacedWrapper(env, teacher, self.DISCOUNT_FACTOR, episodes_per_update=self.EP_PER_UPDATE,
-                                   context_visible=True, context_post_processing=context_post_processing)
+                                   context_visible=True)
         elif self.curriculum.acl():
             bins = 50
             teacher = ACL(bins * bins, self.ACL_ETA, eps=self.ACL_EPS, norm_hist_len=2000)
@@ -199,9 +202,8 @@ class UMazeExperiment(AbstractExperiment):
                                       self.INITIAL_VARIANCE.copy(), bounds, self.DELTA, max_kl=self.KL_EPS,
                                       std_lower_bound=self.STD_LOWER_BOUND.copy(), kl_threshold=self.KL_THRESHOLD)
         else:
-            init_samples = np.random.uniform(self.LOWER_CONTEXT_BOUNDS, self.UPPER_CONTEXT_BOUNDS, size=(200, 4))
-            return CurrOT(bounds, init_samples, self.target_sampler, self.DELTA, self.METRIC_EPS, self.EP_PER_UPDATE,
-                          wb_max_reuse=1)
+            init_samples = np.random.uniform(self.LOWER_CONTEXT_BOUNDS, self.UPPER_CONTEXT_BOUNDS, size=(200, 2))
+            return CurrOT(bounds, init_samples, self.target_sampler, self.DELTA, self.METRIC_EPS)
 
     def get_env_name(self):
         return "u_maze"

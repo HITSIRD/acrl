@@ -27,7 +27,7 @@ register(
 register(
     id="MiniGrid-C-v1",
     entry_point="acrl.environments.minigrid.envs:CEnv",
-    kwargs={"size": 16},
+    kwargs={"size": 12},
 )
 
 register(

@@ -46,7 +46,7 @@ def full_plot(path=None, base_log_dir="logs"):
     performance_plot(ax[1, 1], base_log_dir=base_log_dir, title='Medium-C', exp_cls=MinigridFExperiment,
                      parameters={'ACRL_LAMBDA': 0.25}, y_label=False, iter_steps=2500)
     performance_plot(ax[1, 2], base_log_dir=base_log_dir, title='Hard-A', exp_cls=MinigridCExperiment,
-                     parameters={'ACRL_LAMBDA': 0.5}, y_label=False, iter_steps=10000)
+                     parameters={'ACRL_LAMBDA': 0.25}, y_label=False, iter_steps=10000)
     performance_plot(ax[1, 3], base_log_dir=base_log_dir, title='Hard-B', exp_cls=MinigridGExperiment,
                      parameters={'ACRL_LAMBDA': 0.25}, y_label=False, iter_steps=5000)
 

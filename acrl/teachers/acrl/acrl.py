@@ -30,7 +30,8 @@ class ACRL(AbstractTeacher):
         # self.uniform_sampler = MinigridSampler(self.context_lb, self.context_ub)
         self.uniform_sampler = UniformSampler(self.context_lb, self.context_ub)
         self.vae = VAE(self.config)
-        self.evaluator = Evaluator(self.config)
+        # self.evaluator = Evaluator(self.config)
+        self.evaluator = None
         self.policy = None  # sample trajectory to train VAE
 
         self.teacher = LatentSpacePrediction(initial_mean, initial_std, self.target, self.uniform_sampler,
@@ -51,8 +52,8 @@ class ACRL(AbstractTeacher):
             ret = np.array(ret)[-min(size, self.config['task_buffer_size']):]
             print(f'mean of return: {np.mean(ret)}({np.std(ret)})')
 
-            self.evaluator.update(env.get_encountered_contexts)
-            self.evaluator.plot(episode_count)
+            # self.evaluator.update(env.get_encountered_contexts)
+            # self.evaluator.plot(episode_count)
 
             #  evaluate current policy
             # if hasattr(env.env, 'plot_evaluate_task'):
@@ -150,7 +151,7 @@ class LatentSpacePrediction:
 
         if np.random.random() > 0.05:
             context = self.current_tasks[
-                np.random.randint(len(buffer))] if np.random.random() < self.update_lambda else self.eval_sampler()
+                np.random.randint(len(buffer))] if np.random.random() < self.update_lambda else self.uniform_sampler()
         else:
             context = self.target
         # context = self.current_tasks[np.random.randint(len(buffer))]
@@ -212,9 +213,9 @@ class LatentSpacePrediction:
 
         task_latent = torch.stack(task_latent)
         task_returns = torch.from_numpy(np.array(task_returns)).cpu().numpy().flatten()
-        index = np.argwhere((task_returns > self.return_delta) & (task_returns < 0.9)).flatten()
-        # index = np.argwhere(task_returns > self.return_delta).flatten()
-        if index.shape[0] == 0:
+        # index = np.argwhere((task_returns > self.return_delta) & (task_returns < 0.9)).flatten()
+        index = np.argwhere(task_returns > self.return_delta).flatten()
+        if len(index.shape) == 0:
             print('nothing to update')
             return
 

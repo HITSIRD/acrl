@@ -28,14 +28,14 @@ def context_post_processing(context):
 
 
 class MinigridGExperiment(AbstractExperiment):
-    TARGET_MEANS = np.array([4, 14])
+    TARGET_MEANS = np.array([2, 13])
     TARGET_VARIANCES = np.diag([1e-4, 1e-4])
 
     LOWER_CONTEXT_BOUNDS = np.array([0.5, 0.5])
     UPPER_CONTEXT_BOUNDS = np.array([14.5, 14.5])
 
     def target_sampler(self, n=None, rng=None):
-        target = np.array([4, 14])
+        target = np.array([2, 13])
         if n is None:
             return target
         else:
@@ -200,7 +200,7 @@ class MinigridGExperiment(AbstractExperiment):
                                       self.INITIAL_VARIANCE.copy(), bounds, self.DELTA, max_kl=self.KL_EPS,
                                       std_lower_bound=self.STD_LOWER_BOUND.copy(), kl_threshold=self.KL_THRESHOLD)
         else:
-            init_samples = np.random.uniform(self.LOWER_CONTEXT_BOUNDS, self.UPPER_CONTEXT_BOUNDS, size=(200, 4))
+            init_samples = np.random.uniform(self.LOWER_CONTEXT_BOUNDS, self.UPPER_CONTEXT_BOUNDS, size=(200, 2))
             return CurrOT(bounds, init_samples, self.target_sampler, self.DELTA, self.METRIC_EPS)
 
     def get_env_name(self):

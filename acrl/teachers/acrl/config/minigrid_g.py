@@ -4,7 +4,7 @@ config = {
     # --- CURRICULUM ---
     'step_size': 0.9,
     'return_delta': 0.2,  # select traj sample which return is greater than return_delta
-    'update_delta': 0.3,  # if mean of return > update_delta, then update context dist
+    'update_delta': 0.1,  # if mean of return > update_delta, then update context dist
     'target_return_threshold': 0.2,
     'task_buffer_size': 256,
     'lambda': 0.25,  # LSP ratio

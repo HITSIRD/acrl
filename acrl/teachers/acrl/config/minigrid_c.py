@@ -4,13 +4,13 @@ config = {
     # --- CURRICULUM ---
     'step_size': 0.9,
     'return_delta': 0.4,  # select traj sample which return is greater than return_delta
-    'update_delta': 0.5,  # if mean of return > update_delta, then update context dist
+    'update_delta': 0.3,  # if mean of return > update_delta, then update context dist
     'target_return_threshold': 0.4,
     'lambda': 0.25,
     'task_buffer_size': 256,
-    'noise_std': [0.5, 0.5],
+    'noise_std': [0.5, 0.5, 0.5, 0.5],
     'num_target_samples': 20,
-    'update_freq': 1000,
+    'update_freq': 500,
     'enable_lsp': True,
     'enable_ebu': True,
     'encoder_max_grad_norm': None,
