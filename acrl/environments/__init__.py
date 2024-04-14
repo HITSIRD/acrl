@@ -54,6 +54,12 @@ register(
     kwargs={"size": 16},
 )
 
+register(
+    id="MiniGrid-H-v1",
+    entry_point="acrl.environments.minigrid.envs:HEnv",
+    kwargs={"size": 10},
+)
+
 robots = ['Point', 'Ant', 'Swimmer']
 # task_types = ['Maze', 'Maze1', 'Maze2', 'Push', 'Fall', 'Block', 'BlockMaze']
 task_types = ['Maze', 'Maze1', 'Maze2']

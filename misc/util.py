@@ -39,7 +39,8 @@ def add_plot(base_log_dir, ax, color, marker="o", markevery=3, iter_steps=1, max
         print(seed_performances)
         print("Found %d completed seeds" % len(seed_performances))
               
-        ratio = 0.707
+        # ratio = 0.707
+        ratio = 0.5
         min_length = np.min([len(seed_performance) for seed_performance in seed_performances])
 
         steps = iterations[0: min_length] * iter_steps

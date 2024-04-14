@@ -50,6 +50,9 @@ def main():
     elif args.env == 'minigrid-g':
         from acrl.experiments.minigrid_g_experiment import MinigridGExperiment
         exp = MinigridGExperiment(args.base_log_dir, args.type, args.learner, parameters, args.seed)
+    elif args.env == 'minigrid-h':
+        from acrl.experiments.minigrid_h_experiment import MinigridHExperiment
+        exp = MinigridHExperiment(args.base_log_dir, args.type, args.learner, parameters, args.seed)
     elif args.env == 'u-maze':
         from acrl.experiments.u_maze_experiment import UMazeExperiment
         exp = UMazeExperiment(args.base_log_dir, args.type, args.learner, parameters, args.seed)

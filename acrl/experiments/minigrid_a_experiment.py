@@ -125,7 +125,7 @@ class MinigridAExperiment(AbstractExperiment):
         elif self.curriculum.self_paced() or self.curriculum.wasserstein():
             teacher = self.create_self_paced_teacher(with_callback=False)
             env = SelfPacedWrapper(env, teacher, self.DISCOUNT_FACTOR, episodes_per_update=self.EP_PER_UPDATE,
-                                   context_visible=True)
+                                   context_visible=True, log_dir=self.get_log_dir())
         elif self.curriculum.acl():
             bins = 50
             teacher = ACL(bins * bins, self.ACL_ETA, eps=self.ACL_EPS, norm_hist_len=2000)
@@ -217,4 +217,5 @@ class MinigridAExperiment(AbstractExperiment):
                 action = model.step(obs, state=None, deterministic=False)
                 obs, rewards, done, infos = self.vec_eval_env.step(action)
 
-        return self.eval_env.get_statistics()[0]
+        statistics = self.eval_env.get_statistics()
+        return statistics[0], statistics[4]

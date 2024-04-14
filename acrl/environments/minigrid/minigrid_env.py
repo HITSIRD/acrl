@@ -788,11 +788,11 @@ class MiniGridEnv(gym.Env):
             return self.get_full_render(highlight, tile_size)
 
     def render(self, mode='human'):
-        img = self.get_frame(self.highlight, self.tile_size, self.agent_pov)
-        plt.imshow(img)
-        plt.axis('off')
+        # img = self.get_frame(self.highlight, self.tile_size, self.agent_pov)
+        # plt.imshow(img)
+        # plt.axis('off')
         # plt.savefig('minigrid_easy.pdf', bbox_inches='tight', pad_inches=0)
-        plt.show()
+        # plt.show()
 
         if self.render_mode == "human":
             # if self.window is None:

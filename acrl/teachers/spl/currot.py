@@ -31,7 +31,7 @@ class CurrOT(AbstractTeacher):
     def on_rollout_end(self, context, ret):
         self.sampler.update(context, ret)
 
-    def update_distribution(self, contexts, returns):
+    def update_distribution(self, contexts, returns, env, episode, log_dir):
         t_up1 = time.time()
         fail_contexts, fail_returns = self.success_buffer.update(contexts, returns,
                                                                  self.teacher.target_sampler(
@@ -70,6 +70,7 @@ class CurrOT(AbstractTeacher):
 
         print("Total update took: %.3e (Buffer/Update: %.3e/%.3e)" % (t_mo2 - t_up1, t_up2 - t_up1, t_mo2 - t_mo1))
 
+        env.plot_dist(episode, self, log_dir)
 
     def _sample(self):
         sample = self.sampler(self.teacher.current_samples)

@@ -14,7 +14,7 @@ from acrl.environments.minigrid.utils.util import get_area
 import matplotlib.pyplot as plt
 import numpy as np
 
-wall = [[1, 3], [2, 3], [3, 3], [4, 3], [5, 3], [6, 3], [6, 5], [6, 6], [6, 7], [6, 8]]
+wall = [[1, 3], [2, 3], [3, 3], [4, 3], [5, 3], [6, 3], [6, 4], [6, 6], [6, 7], [6, 8]]
 # lava = [[1, 3], [2, 3], [3, 3], [3, 4], [3, 5], [3, 6]]
 lava = [[3, 4], [3, 5], [3, 6]]
 door = [6, 5]

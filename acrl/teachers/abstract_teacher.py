@@ -128,7 +128,7 @@ class BaseWrapper(gym.Env):
             self.processed_context = None
             self.cur_initial_state = None
 
-    def get_statistics(self):
+    def get_statistics(self, success_threshold=None):
         if len(self.stats_buffer) == 0:
             return 0., 0., 0, 0, 0.
         else:
@@ -136,7 +136,10 @@ class BaseWrapper(gym.Env):
             mean_reward = np.mean(rewards)
             mean_disc_reward = np.mean(disc_rewards)
             mean_step_length = np.mean(steps)
-            success_rate = len(np.where(np.array(rewards) > 0.75)[0]) / len(rewards)
+            if success_threshold is not None:
+                success_rate = len(np.where(np.array(rewards) > success_threshold)[0]) / len(rewards)
+            else:
+                success_rate = 0
 
             return mean_reward, mean_disc_reward, mean_step_length, np.sum(steps), success_rate
 

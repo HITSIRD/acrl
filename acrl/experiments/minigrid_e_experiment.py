@@ -217,4 +217,4 @@ class MinigridEExperiment(AbstractExperiment):
                 obs, rewards, done, infos = self.vec_eval_env.step(action)
 
         statistics = self.eval_env.get_statistics()
-        return statistics[0]
+        return statistics[0], statistics[4]

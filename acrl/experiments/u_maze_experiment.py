@@ -61,7 +61,7 @@ class UMazeExperiment(AbstractExperiment):
     STD_LOWER_BOUND = np.array([0.01, 0.01])
     KL_THRESHOLD = 8000.
     KL_EPS = 0.25
-    DELTA = -70
+    DELTA = -60
     METRIC_EPS = 1.0
     EP_PER_UPDATE = 40
 
@@ -83,13 +83,13 @@ class UMazeExperiment(AbstractExperiment):
     VDS_EPOCHS = 3
     VDS_BATCHES = 20
 
-    AG_P_RAND = {Learner.PPO: 0.1, Learner.SAC: None}
-    AG_FIT_RATE = {Learner.PPO: 100, Learner.SAC: None}
-    AG_MAX_SIZE = {Learner.PPO: 1000, Learner.SAC: None}
+    AG_P_RAND = {Learner.PPO: 0.1, Learner.SAC: 0.1}
+    AG_FIT_RATE = {Learner.PPO: 100, Learner.SAC: 100}
+    AG_MAX_SIZE = {Learner.PPO: 1000, Learner.SAC: 1000}
 
-    GG_NOISE_LEVEL = {Learner.PPO: 0.1, Learner.SAC: None}
-    GG_FIT_RATE = {Learner.PPO: 200, Learner.SAC: None}
-    GG_P_OLD = {Learner.PPO: 0.2, Learner.SAC: None}
+    GG_NOISE_LEVEL = {Learner.PPO: 0.1, Learner.SAC: 0.1}
+    GG_FIT_RATE = {Learner.PPO: 200, Learner.SAC: 200}
+    GG_P_OLD = {Learner.PPO: 0.2, Learner.SAC: 0.2}
 
     ACRL_LAMBDA = config['lambda']
 
@@ -211,13 +211,12 @@ class UMazeExperiment(AbstractExperiment):
     def evaluate_learner(self, path):
         model_load_path = os.path.join(path, "model.zip")
         model = self.learner.load_for_evaluation(model_load_path, self.vec_eval_env)
-        episode = np.zeros(30)
-        for i in range(0, 30):
+        for i in range(0, 50):
             obs = self.vec_eval_env.reset()
             done = False
             while not done:
                 action = model.step(obs, state=None, deterministic=False)
                 obs, rewards, done, infos = self.vec_eval_env.step(action)
-                episode[i] += rewards
-        # print(episode)
-        return self.eval_env.get_statistics()[0]
+
+        statistics = self.eval_env.get_statistics(success_threshold=-100)
+        return statistics[0], statistics[4]

@@ -4,7 +4,7 @@ import torch
 import numpy as np
 from stable_baselines3.common.vec_env import DummyVecEnv
 
-from acrl.environments.minigrid.envs import AEnv
+from acrl.environments.minigrid.envs import HEnv
 from acrl.experiments.abstract_experiment import AbstractExperiment, Learner
 from acrl.teachers.acrl import ACRLWrapper, ACRL
 from acrl.teachers.goal_gan import GoalGAN, GoalGANWrapper
@@ -28,14 +28,14 @@ def context_post_processing(context):
 
 
 class MinigridHExperiment(AbstractExperiment):
-    TARGET_MEANS = np.array([6, 1])
+    TARGET_MEANS = np.array([7, 1])
     TARGET_VARIANCES = np.array([np.diag([1e-4, 1e-4]), np.diag([1e-4, 1e-4])])
 
     LOWER_CONTEXT_BOUNDS = np.array([1, 1])
     UPPER_CONTEXT_BOUNDS = np.array([8, 8])
 
     def target_sampler(self, n=None, rng=None):
-        target = np.array([6., 1.])
+        target = np.array([7., 1.])
         if n is None:
             return target
         else:
@@ -51,7 +51,7 @@ class MinigridHExperiment(AbstractExperiment):
 
     INITIAL_MEAN = np.array([2., 3.])
     # INITIAL_VARIANCE = np.diag(np.square([1., 1.]))
-    INITIAL_VARIANCE = np.array([1., 1.])
+    INITIAL_VARIANCE = np.array([0.5, 0.5])
 
     STD_LOWER_BOUND = np.array([0.01, 0.01])
     KL_THRESHOLD = 8000.
@@ -91,10 +91,10 @@ class MinigridHExperiment(AbstractExperiment):
     def __init__(self, base_log_dir, curriculum_name, learner_name, parameters, seed):
         super().__init__(base_log_dir, curriculum_name, learner_name, parameters, seed)
         self.eval_env, self.vec_eval_env = self.create_environment(evaluation=True)
-        self.env = gym.make('MiniGrid-A-v1')
+        self.env = gym.make('MiniGrid-H-v1')
 
     def create_environment(self, evaluation=False):
-        env = gym.make('MiniGrid-A-v1')
+        env = gym.make('MiniGrid-H-v1')
 
         config['action_dim'] = env.action_space.n
         config['context_dim'] = self.INITIAL_MEAN.shape[0]
@@ -110,7 +110,7 @@ class MinigridHExperiment(AbstractExperiment):
         elif self.curriculum.alp_gmm():
             teacher = ALPGMM(self.LOWER_CONTEXT_BOUNDS.copy(), self.UPPER_CONTEXT_BOUNDS.copy(), seed=self.seed,
                              fit_rate=self.AG_FIT_RATE[self.learner], random_task_ratio=self.AG_P_RAND[self.learner],
-                             max_size=self.AG_MAX_SIZE[self.learner], post_sampler=AEnv.is_feasible)
+                             max_size=self.AG_MAX_SIZE[self.learner], post_sampler=HEnv.is_feasible)
             env = ALPGMMWrapper(env, teacher, self.DISCOUNT_FACTOR, context_visible=True,
                                 context_post_processing=context_post_processing)
         elif self.curriculum.goal_gan():
@@ -119,7 +119,7 @@ class MinigridHExperiment(AbstractExperiment):
                               state_noise_level=self.GG_NOISE_LEVEL[self.learner], success_distance_threshold=0.01,
                               update_size=self.GG_FIT_RATE[self.learner], n_rollouts=2, goid_lb=0.25, goid_ub=0.75,
                               p_old=self.GG_P_OLD[self.learner], pretrain_samples=samples,
-                              post_sampler=AEnv.is_feasible)
+                              post_sampler=HEnv.is_feasible)
             env = GoalGANWrapper(env, teacher, self.DISCOUNT_FACTOR, context_visible=True,
                                  context_post_processing=context_post_processing)
         elif self.curriculum.self_paced() or self.curriculum.wasserstein():
@@ -135,24 +135,24 @@ class MinigridHExperiment(AbstractExperiment):
                                                                 [bins, bins]))
         elif self.curriculum.plr():
             teacher = PLR(self.LOWER_CONTEXT_BOUNDS, self.UPPER_CONTEXT_BOUNDS, self.PLR_REPLAY_RATE,
-                          self.PLR_BUFFER_SIZE, self.PLR_BETA, self.PLR_RHO, post_sampler=AEnv.is_feasible)
+                          self.PLR_BUFFER_SIZE, self.PLR_BETA, self.PLR_RHO, post_sampler=HEnv.is_feasible)
             env = PLRWrapper(env, teacher, self.DISCOUNT_FACTOR, context_visible=True)
         elif self.curriculum.vds():
             teacher = VDS(self.LOWER_CONTEXT_BOUNDS, self.UPPER_CONTEXT_BOUNDS, self.DISCOUNT_FACTOR, self.VDS_NQ,
                           q_train_config={"replay_size": 5 * self.STEPS_PER_ITER, "lr": self.VDS_LR,
                                           "n_epochs": self.VDS_EPOCHS, "batches_per_epoch": self.VDS_BATCHES,
-                                          "steps_per_update": self.STEPS_PER_ITER}, post_sampler=AEnv.is_feasible)
+                                          "steps_per_update": self.STEPS_PER_ITER}, post_sampler=HEnv.is_feasible)
             env = VDSWrapper(env, teacher, self.DISCOUNT_FACTOR, context_visible=True,
                              context_post_processing=context_post_processing)
         elif self.curriculum.acrl():
             teacher = ACRL(self.TARGET_MEANS.copy(), self.INITIAL_MEAN.copy(), self.INITIAL_VARIANCE.copy(),
                            self.LOWER_CONTEXT_BOUNDS, self.UPPER_CONTEXT_BOUNDS, config, self.get_log_dir(),
-                           post_sampler=AEnv.is_feasible)
+                           post_sampler=HEnv.is_feasible)
             env = ACRLWrapper(env, teacher, self.DISCOUNT_FACTOR, episodes_per_update=self.EP_PER_UPDATE,
                               context_visible=True, context_post_processing=context_post_processing)
         elif self.curriculum.random():
             teacher = MinigridSampler(self.LOWER_CONTEXT_BOUNDS, self.UPPER_CONTEXT_BOUNDS,
-                                      post_sampler=AEnv.is_feasible)
+                                      post_sampler=HEnv.is_feasible)
             env = BaseWrapper(env, teacher, self.DISCOUNT_FACTOR, context_visible=True,
                               context_post_processing=context_post_processing)
         else:
@@ -217,4 +217,5 @@ class MinigridHExperiment(AbstractExperiment):
                 action = model.step(obs, state=None, deterministic=False)
                 obs, rewards, done, infos = self.vec_eval_env.step(action)
 
-        return self.eval_env.get_statistics()[0]
+        statistics = self.eval_env.get_statistics()
+        return statistics[0], statistics[4]

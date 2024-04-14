@@ -42,8 +42,8 @@ class VDS(AbstractTeacher):
 
     def initialize_teacher(self, env, learner, state_provider):
         obs_shape = env.observation_space.shape
-        # action_dim = env.action_space.shape[0]
-        action_dim = 1
+        action_dim = env.action_space.shape[0]
+        # action_dim = 1
         self.replay_buffer = ReplayBuffer(self.q_train_config["replay_size"], obs_shape, action_dim,
                                           handle_timeout_termination=False)
         self.learner = learner
