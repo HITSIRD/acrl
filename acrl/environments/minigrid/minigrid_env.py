@@ -38,14 +38,14 @@ class MiniGridEnv(gym.Env):
         right = 1
         forward = 2
         # Pick up an object
-        # pickup = 3
+        pickup = 3
         # Drop an object
-        # drop = 4
+        drop = 4
         # Toggle/activate an object
-        # toggle = 5
+        toggle = 5
 
         # Done completing task
-        # done = 6
+        done = 6
 
     def __init__(
         self,
@@ -590,7 +590,7 @@ class MiniGridEnv(gym.Env):
                     self.carrying.cur_pos = np.array([-1, -1])
                     self.grid.set(fwd_pos[0], fwd_pos[1], None)
                     if self.count == 0:
-                        reward = 0.5 * self._reward()
+                        # reward = 0.5 * self._reward()
                         # reward = 0.5
                         self.count += 1
 
@@ -607,7 +607,7 @@ class MiniGridEnv(gym.Env):
                 fwd_cell.toggle(self, fwd_pos)
                 if fwd_cell.type == 'Door' and self.door_count == 0:
                     # reward = 0.5 * self._reward()
-                    reward = 0.25
+                    # reward = 0.25
                     self.door_count = 0
 
         # Done action (not used by default)

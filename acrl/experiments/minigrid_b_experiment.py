@@ -23,8 +23,8 @@ from acrl.teachers.acrl.config.minigrid_b import config
 
 
 def context_post_processing(context):
-    # return np.rint(context).tolist()
-    return context
+    return np.rint(context).tolist()
+    # return context
 
 
 class MinigridBExperiment(AbstractExperiment):

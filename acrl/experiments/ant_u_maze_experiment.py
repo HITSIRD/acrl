@@ -17,19 +17,23 @@ from acrl.teachers.vds import VDS, VDSWrapper
 from acrl.teachers.sampler import Subsampler
 from scipy.stats import multivariate_normal
 
-from acrl.teachers.acrl.config.u_maze import config
+from acrl.teachers.acrl.config.ant_u_maze import config
+from acrl.util.device import device_type
 
 os.environ[
     'LD_LIBRARY_PATH'] = '$LD_LIBRARY_PATH:/home/wenyongyan/.mujoco/mujoco210/bin:$LD_LIBRARY_PATH:/usr/lib/nvidia'
-# os.environ['LD_PRELOAD'] = '/usr/lib/x86_64-linux-gnu/libGLEW.so'
-# os.environ['LD_PRELOAD'] = '/home/wenyongyan/.mujoco/mujoco210/bin/libglewegl.so'
+
+# os.environ['LD_LIBRARY_PATH'] = '$LD_LIBRARY_PATH:/usr/lib/nvidia'
+os.environ['LD_PRELOAD'] = '/usr/lib/x86_64-linux-gnu/libGLEW.so'
+# os.add_dll_directory('/home/wenyongyan/.mujoco/mujoco210/bin')
+os.environ['LD_PRELOAD'] = '/home/wenyongyan/.mujoco/mujoco210/bin/libglewegl.so'
 
 
 def context_post_processing(context):
     return context
 
 
-class SwimmerMazeExperiment(AbstractExperiment):
+class AntUMazeExperiment(AbstractExperiment):
     TARGET_MEANS = np.array([0., 8.])
     TARGET_VARIANCES = np.diag([1e-4, 1e-4])
 
@@ -54,7 +58,7 @@ class SwimmerMazeExperiment(AbstractExperiment):
     STD_LOWER_BOUND = np.array([0.01, 0.01])
     KL_THRESHOLD = 8000.
     KL_EPS = 0.25
-    DELTA = 0.3
+    DELTA = -60
     METRIC_EPS = 1.0
     EP_PER_UPDATE = 40
 
@@ -76,24 +80,32 @@ class SwimmerMazeExperiment(AbstractExperiment):
     VDS_EPOCHS = 3
     VDS_BATCHES = 20
 
-    AG_P_RAND = {Learner.PPO: 0.1, Learner.SAC: None}
-    AG_FIT_RATE = {Learner.PPO: 100, Learner.SAC: None}
-    AG_MAX_SIZE = {Learner.PPO: 1000, Learner.SAC: None}
+    AG_P_RAND = {Learner.PPO: 0.1, Learner.SAC: 0.1}
+    AG_FIT_RATE = {Learner.PPO: 100, Learner.SAC: 100}
+    AG_MAX_SIZE = {Learner.PPO: 1000, Learner.SAC: 1000}
 
-    GG_NOISE_LEVEL = {Learner.PPO: 0.1, Learner.SAC: None}
-    GG_FIT_RATE = {Learner.PPO: 200, Learner.SAC: None}
-    GG_P_OLD = {Learner.PPO: 0.2, Learner.SAC: None}
+    GG_NOISE_LEVEL = {Learner.PPO: 0.1, Learner.SAC: 0.1}
+    GG_FIT_RATE = {Learner.PPO: 200, Learner.SAC: 200}
+    GG_P_OLD = {Learner.PPO: 0.2, Learner.SAC: 0.2}
 
     ACRL_LAMBDA = config['lambda']
-    ACRL_EBU_RATIO = config['ebu_ratio']
 
     def __init__(self, base_log_dir, curriculum_name, learner_name, parameters, seed):
         super().__init__(base_log_dir, curriculum_name, learner_name, parameters, seed)
         self.eval_env, self.vec_eval_env = self.create_environment(evaluation=True)
-        self.env = gym.make('SwimmerMaze1-v1')
+        self.env = gym.make('AntMaze1-v1')
 
     def create_environment(self, evaluation=False):
-        env = gym.make('SwimmerMaze1-v1')
+        env = gym.make('AntMaze1-v1')
+
+        config['action_dim'] = env.action_space.shape[0]
+        config['context_dim'] = self.INITIAL_MEAN.shape[0]
+        config['state_dim'] = env.observation_space.shape[0]
+        config['max_episode_len'] = env.env.spec.max_episode_steps
+        print(config['max_episode_len'])
+        if len(self.parameters) > 0:
+            config['lambda'] = float(self.parameters['ACRL_LAMBDA'])
+
         if evaluation or self.curriculum.default():
             teacher = DistributionSampler(self.target_sampler, self.LOWER_CONTEXT_BOUNDS, self.UPPER_CONTEXT_BOUNDS)
             env = BaseWrapper(env, teacher, self.DISCOUNT_FACTOR, context_visible=True,
@@ -115,7 +127,7 @@ class SwimmerMazeExperiment(AbstractExperiment):
         elif self.curriculum.self_paced() or self.curriculum.wasserstein():
             teacher = self.create_self_paced_teacher(with_callback=False)
             env = SelfPacedWrapper(env, teacher, self.DISCOUNT_FACTOR, episodes_per_update=self.EP_PER_UPDATE,
-                                   context_visible=True, context_post_processing=context_post_processing)
+                                   context_visible=True)
         elif self.curriculum.acl():
             bins = 50
             teacher = ACL(bins * bins, self.ACL_ETA, eps=self.ACL_EPS, norm_hist_len=2000)
@@ -135,11 +147,6 @@ class SwimmerMazeExperiment(AbstractExperiment):
             env = VDSWrapper(env, teacher, self.DISCOUNT_FACTOR, context_visible=True,
                              context_post_processing=context_post_processing)
         elif self.curriculum.acrl():
-            config['action_dim'] = 8
-            config['context_dim'] = self.TARGET_MEANS.shape[0]
-            # config['state_dim'] = env.observation_space.shape + self.TARGET_MEANS.shape[0]
-            config['state_dim'] = 104 + self.TARGET_MEANS.shape[0]
-            config['max_episode_len'] = 100
             teacher = ACRL(self.TARGET_MEANS.copy(), self.INITIAL_MEAN.copy(), self.INITIAL_VARIANCE.copy(),
                            self.LOWER_CONTEXT_BOUNDS, self.UPPER_CONTEXT_BOUNDS, config, self.get_log_dir())
             env = ACRLWrapper(env, teacher, self.DISCOUNT_FACTOR, episodes_per_update=self.EP_PER_UPDATE,
@@ -154,11 +161,10 @@ class SwimmerMazeExperiment(AbstractExperiment):
         return env, DummyVecEnv([lambda: env])
 
     def create_learner_params(self):
-        return dict(common=dict(gamma=self.DISCOUNT_FACTOR, seed=self.seed, verbose=0, device="cuda",
+        return dict(common=dict(gamma=self.DISCOUNT_FACTOR, seed=self.seed, verbose=0, device=device_type,
                                 policy_kwargs=dict(net_arch=[128, 128, 128], activation_fn=torch.nn.Tanh)),
                     ppo=dict(n_steps=self.STEPS_PER_ITER, gae_lambda=self.LAM, batch_size=128),
-                    sac=dict(learning_rate=3e-4, buffer_size=10000, learning_starts=500, batch_size=64,
-                             train_freq=5, target_entropy="auto"))
+                    sac=dict(target_entropy="auto"))
 
     def create_experiment(self):
         timesteps = 201 * self.STEPS_PER_ITER
@@ -198,16 +204,17 @@ class SwimmerMazeExperiment(AbstractExperiment):
                           wb_max_reuse=1)
 
     def get_env_name(self):
-        return "swimmer_maze"
+        return "ant_u_maze"
 
     def evaluate_learner(self, path):
         model_load_path = os.path.join(path, "model.zip")
         model = self.learner.load_for_evaluation(model_load_path, self.vec_eval_env)
-        for i in range(0, 1):
+        for i in range(0, 50):
             obs = self.vec_eval_env.reset()
             done = False
             while not done:
                 action = model.step(obs, state=None, deterministic=False)
                 obs, rewards, done, infos = self.vec_eval_env.step(action)
 
-        return self.eval_env.get_statistics()[0]
+        statistics = self.eval_env.get_statistics(success_threshold=-350)
+        return statistics[0], statistics[4]

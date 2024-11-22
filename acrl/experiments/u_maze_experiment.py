@@ -166,8 +166,7 @@ class UMazeExperiment(AbstractExperiment):
         return dict(common=dict(gamma=self.DISCOUNT_FACTOR, seed=self.seed, verbose=0, device=device_type,
                                 policy_kwargs=dict(net_arch=[128, 128, 128], activation_fn=torch.nn.Tanh)),
                     ppo=dict(n_steps=self.STEPS_PER_ITER, gae_lambda=self.LAM, batch_size=128),
-                    sac=dict(learning_rate=3e-4, buffer_size=10000, learning_starts=500, batch_size=64,
-                             train_freq=5, target_entropy="auto"))
+                    sac=dict(target_entropy="auto"))
 
     def create_experiment(self):
         timesteps = 201 * self.STEPS_PER_ITER

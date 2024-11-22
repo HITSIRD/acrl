@@ -21,15 +21,17 @@ def add_plot(base_log_dir, ax, color, marker="o", markevery=3, iter_steps=1, max
         seed_log_dir = os.path.join(base_log_dir, seed_dir)
         print(seed_log_dir)
 
-        if os.path.exists(os.path.join(seed_log_dir, "performance.pkl")):
+        metric = 'success.pkl'
+        # metric = 'performance.pkl'
+
+        if os.path.exists(os.path.join(seed_log_dir, metric)):
         # if os.path.exists(os.path.join(seed_log_dir, "success.pkl")):
             iteration_dirs = [d for d in os.listdir(seed_log_dir) if d.startswith("iteration-")]
             unsorted_iterations = np.array([int(d[len("iteration-"):]) for d in iteration_dirs])
             idxs = np.argsort(unsorted_iterations)
             iterations = unsorted_iterations[idxs]
 
-            with open(os.path.join(seed_log_dir, "performance.pkl"), "rb") as f:
-            # with open(os.path.join(seed_log_dir, "success.pkl"), "rb") as f:
+            with open(os.path.join(seed_log_dir, metric), "rb") as f:
                 seed_performances.append(pickle.load(f))
         else:
             pass
@@ -40,7 +42,7 @@ def add_plot(base_log_dir, ax, color, marker="o", markevery=3, iter_steps=1, max
         print("Found %d completed seeds" % len(seed_performances))
               
         # ratio = 0.707
-        ratio = 0.5
+        ratio = 1.0
         min_length = np.min([len(seed_performance) for seed_performance in seed_performances])
 
         steps = iterations[0: min_length] * iter_steps

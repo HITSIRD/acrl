@@ -8,6 +8,51 @@ from acrl.util.device import device
 from acrl.teachers.acrl.util import FeatureExtractor
 
 
+class Encoder(nn.Module):
+    def __init__(self,
+                 encoder_layers=(),
+                 hidden_size=64,
+                 layers_after_gru=(),
+                 latent_dim=32,
+                 action_dim=2,
+                 action_embed_dim=10,
+                 state_dim=147,
+                 state_embed_dim=10,
+                 reward_size=1,
+                 reward_embed_dim=5,
+                 task_dim=2,
+                 task_embed_dim=64
+                 ):
+
+        super(Encoder, self).__init__()
+
+        self.latent_dim = latent_dim
+        self.hidden_size = hidden_size
+
+        # embed action, state, reward
+        self.task_encoder = FeatureExtractor(task_dim, task_embed_dim, F.relu)
+
+        curr_input_dim = task_embed_dim
+
+        self.fc_layers = nn.ModuleList([])
+        for i in range(len(encoder_layers)):
+            self.fc_layers.append(nn.Linear(curr_input_dim, encoder_layers[i]))
+            curr_input_dim = encoder_layers[i]
+
+        # output layer
+        self.output = nn.Linear(curr_input_dim, latent_dim)
+
+    def forward(self, tasks):
+        h = self.task_encoder(tasks)
+
+        for i in range(len(self.fc_layers)):
+            h = F.relu(self.fc_layers[i](h))
+
+        # outputs
+        latent = self.output(h)
+        return latent
+
+
 class TransitionEncoder(nn.Module):
     def __init__(self,
                  # network size
@@ -108,6 +153,7 @@ class TransitionEncoder(nn.Module):
 
         return latent_sample, latent_mean, latent_logvar
 
+
 # class TrajectoryEncoder(nn.Module):
 #     def __init__(self, latent_dim):
 #         super(TrajectoryEncoder, self).__init__()
@@ -145,6 +191,7 @@ class TrajectoryEncoder(nn.Module):
             latent_sample = None
 
         return latent_sample, latent_mean, latent_logvar
+
 
 def _sample_gaussian(mu, logvar, num=None):
     if num is None:

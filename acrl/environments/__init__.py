@@ -76,13 +76,14 @@ top_down = True
 for name_t in all_name:
     # episode length
     if name_t == "AntMaze" or name_t == "AntMaze1" or name_t == "AntMaze2":
-        max_timestep = 1000
-        top_down = False
-        goal_obs = True
-    if name_t == "PointMaze2":
-        max_timestep = 250
+        max_timestep = 350
+        # top_down = False
+        # goal_obs = True
+    elif name_t == "PointMaze2":
+        max_timestep = 150
     else:
         max_timestep = 100
+
     for Test in ['', 'Test', 'Test1', 'Test2']:
 
         if Test in ['Test', 'Test1', 'Test2']:

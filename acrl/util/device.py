@@ -1,7 +1,7 @@
 import torch
 
-device_type = 'cpu'
-# device_type = 'cuda:0'
+# device_type = 'cpu'
+device_type = 'cuda:0'
 
 # if torch.cuda.is_available():
 #     device = torch.device('cuda:0')

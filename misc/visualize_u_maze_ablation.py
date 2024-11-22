@@ -61,8 +61,8 @@ def plot_performance(log_dir):
 
     ax.set_xticks([0, 40, 80, 120, 160, 200])
     ax.set_xticklabels([r"$0$", r"$0.2$", r"$0.4$", r"$0.6$", r"$0.8$", r"1.0"])
-    ax.set_yticks([-100, -80, -60, -40, -20])
-    ax.set_yticklabels([r"$-100$", r"$-80$", r"$-60$", r"$-40$", r"$-20$"])
+    # ax.set_yticks([-100, -80, -60, -40, -20])
+    # ax.set_yticklabels([r"$-100$", r"$-80$", r"$-60$", r"$-40$", r"$-20$"])
     plt.xticks(size=FONT_SIZE)
     plt.yticks(size=FONT_SIZE)
     plt.grid()

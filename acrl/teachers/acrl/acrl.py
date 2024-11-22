@@ -6,6 +6,7 @@ import torch
 
 from acrl.environments.minigrid.envs import AEnv
 from acrl.teachers.abstract_teacher import AbstractTeacher
+from acrl.teachers.acrl.autoencoder import AutoEncoder
 from acrl.teachers.acrl.evaluator import Evaluator
 from acrl.teachers.acrl.util import sample_trajectory, trajectory_embedding, get_latent_map
 from acrl.teachers.acrl.vae import VAE
@@ -29,12 +30,14 @@ class ACRL(AbstractTeacher):
         self.context_ub = context_ub
         # self.uniform_sampler = MinigridSampler(self.context_lb, self.context_ub)
         self.uniform_sampler = UniformSampler(self.context_lb, self.context_ub)
-        self.vae = VAE(self.config)
+        # self.vae = VAE(self.config)
+
+        self.auto_encoder = AutoEncoder(self.config)
         # self.evaluator = Evaluator(self.config)
         self.evaluator = None
         self.policy = None  # sample trajectory to train VAE
 
-        self.teacher = LatentSpacePrediction(initial_mean, initial_std, self.target, self.uniform_sampler,
+        self.teacher = LatentSpacePrediction(initial_mean, initial_std, self.target, initial_mean, self.uniform_sampler,
                                              self.evaluator, self.config)
 
         self.post_sampler = post_sampler
@@ -70,13 +73,13 @@ class ACRL(AbstractTeacher):
                 #     print('plot_dist...')
                 #     env.env.plot_dist(episode_count, self.teacher, self.log_dir)
 
-                for _ in range(self.config['num_vae_update']):
-                    self.vae.compute_vae_loss(update=True)
+                for _ in range(self.config['num_encoder_update']):
+                    self.auto_encoder.update()
 
-                if not self.config['decode_task']:
-                    self.vae.update_task_decoder()
+                # if not self.config['decode_task']:
+                #     self.vae.update_task_decoder()
 
-                self.teacher.update(env, self.policy, self.vae)
+                self.teacher.update(env, self.policy, self.auto_encoder)
                 print('update distribution...')
 
     def sample(self):
@@ -105,11 +108,12 @@ class ACRL(AbstractTeacher):
 
 
 class LatentSpacePrediction:
-    def __init__(self, init_mean, init_std, target, uniform_sampler, evaluator, config):
+    def __init__(self, init_mean, init_std, target, start, uniform_sampler, evaluator, config):
         self.config = config
         self.init_mean = torch.from_numpy(np.array(init_mean))
         self.init_std = torch.from_numpy(np.array(init_std))
         self.target = target
+        self.start = start
 
         self.return_delta = config['return_delta']
         self.step_size = config['step_size']
@@ -124,8 +128,8 @@ class LatentSpacePrediction:
         self.enable_ebu = config['enable_ebu']
 
         self.num_target_samples = config['num_target_samples']
-        self.target_episode_latent_means = None
-        self.target_episode_latent_logvars = None
+        self.target_episode_latent = None
+
         self.target_return = -np.inf
 
         self.uniform_sampler = uniform_sampler
@@ -157,7 +161,7 @@ class LatentSpacePrediction:
         # context = self.current_tasks[np.random.randint(len(buffer))]
 
         if isinstance(context, torch.Tensor):
-            context = context.numpy()
+            context = context.cpu().numpy()
         context = np.clip(context, self.uniform_sampler.lower_bound, self.uniform_sampler.upper_bound)
 
         return context
@@ -180,17 +184,17 @@ class LatentSpacePrediction:
                     context = self.uniform_sampler()
         return context
 
-    def update(self, env, policy, vae):
+    def update(self, env, policy, auto_encoder):
         print('updating task dist...')
-        encoder = vae.transition_encoder
-        task_decoder = vae.task_decoder
+        encoder = auto_encoder.encoder
+        task_decoder = auto_encoder.decoder
 
-        task_latent, sampled_tasks, task_returns = self.latent_map(vae.rollout_storage, encoder)
+        task_latent, sampled_tasks, task_returns, horizon = self.latent_map(auto_encoder.rollout_storage, encoder)
         target_returns = []
 
         # sample target task embedding
         for i in range(self.num_target_samples):
-            target_episode_latent_means, target_episode_latent_logvars, _, _, _, _, target_return = sample_trajectory(
+            target_return = sample_trajectory(
                 env,
                 policy,
                 encoder,
@@ -200,34 +204,32 @@ class LatentSpacePrediction:
             if target_return > self.target_return:
                 print(f'target return update: {self.target_return}->{target_return}')
                 self.target_return = target_return
-                self.target_episode_latent_means = target_episode_latent_means
-                self.target_episode_latent_logvars = target_episode_latent_logvars
 
         target_returns = np.array(target_returns)
 
-        self.target_return = -np.inf  # reset
-        target_means, target_logvars = trajectory_embedding(self.target_episode_latent_means,
-                                                            self.target_episode_latent_logvars)
-        # target_latent = self._sample_gaussian(target_means, target_logvars)
-        target_latent = target_means
+        self.target_return = -np.inf  # reset]
+        target_latent = encoder(torch.from_numpy(self.target).float().to(device))
+        start_latent = encoder(torch.from_numpy(self.start).float().to(device))
 
         task_latent = torch.stack(task_latent)
         task_returns = torch.from_numpy(np.array(task_returns)).cpu().numpy().flatten()
-        # index = np.argwhere((task_returns > self.return_delta) & (task_returns < 0.9)).flatten()
+        # index = np.argwhere((task_returns > self.return_delta) & (task_returns < -10)).flatten()
         index = np.argwhere(task_returns > self.return_delta).flatten()
         if len(index.shape) == 0:
             print('nothing to update')
             return
 
         task_latent = task_latent[index]
-        latent_distance = (task_latent - target_latent).norm(dim=-1).squeeze(-1)
-        _, latent_index = torch.sort(latent_distance)
         convert = target_returns.mean() >= self.target_return_threshold
 
         if self.enable_ebu and not convert:
+            latent_distance = (task_latent - start_latent).norm(dim=-1).squeeze(-1)
+            _, latent_index = torch.sort(latent_distance, descending=True)
             self.EBU_update(sampled_tasks, index, latent_index)
 
         if self.enable_lsp and convert:
+            latent_distance = (task_latent - target_latent).norm(dim=-1).squeeze(-1)
+            _, latent_index = torch.sort(latent_distance)
             self.LSP_update(task_latent, target_latent, latent_index, task_decoder)
 
         self.curriculum_index += 1
@@ -254,7 +256,7 @@ class LatentSpacePrediction:
         print(f'LSP update {len(updated_tasks)} samples')
 
     def EBU_update(self, sampled_tasks, index, latent_index):
-        sampled_tasks = torch.stack(sampled_tasks)
+        sampled_tasks = torch.stack(sampled_tasks).to(device)
         sampled_tasks = sampled_tasks[index]
         ls_task = []
         for i in range(index.shape[0]):
@@ -268,8 +270,8 @@ class LatentSpacePrediction:
         self.current_tasks = ls_task
 
     def latent_map(self, buffer, encoder):
-        latent_means, latent_logvars, tasks, episode_return = get_latent_map(buffer, encoder)
-        return latent_means, tasks, episode_return
+        latent, tasks, episode_return, horizon = get_latent_map(buffer, encoder)
+        return latent, tasks, episode_return, horizon
 
     def _sample_gaussian(self, mu, std, num=None):
         if num is None:

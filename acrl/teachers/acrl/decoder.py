@@ -6,6 +6,7 @@ import numpy as np
 from acrl.teachers.acrl.util import FeatureExtractor
 from acrl.util.device import device
 
+
 class StateTransitionDecoder(nn.Module):
     def __init__(self,
                  layers,
@@ -160,7 +161,7 @@ class TaskDecoder(nn.Module):
     def forward(self, latent_state):
         h = latent_state
         for i in range(len(self.fc_layers)):
-            h = F.sigmoid(self.fc_layers[i](h))
+            h = F.relu(self.fc_layers[i](h))
             # dropout = torch.nn.Dropout(p=0.05)
             # h = dropout(h)
 

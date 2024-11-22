@@ -4,6 +4,7 @@ import matplotlib
 import numpy as np
 from matplotlib import cm
 
+from acrl.experiments.ant_u_maze_experiment import AntUMazeExperiment
 from acrl.experiments.u_maze_experiment import UMazeExperiment
 from misc.util import add_plot
 import matplotlib.pyplot as plt
@@ -40,12 +41,12 @@ def performance_plot(ax=None, path=None, base_log_dir="logs", acrl_lambda=0.5):
     for method, color in zip(["self_paced", "random", "default", "wasserstein", "goal_gan", "alp_gmm",
                               "acl", "plr", "vds", "acrl"],
                              ["C0", "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9"]):
-        exp = UMazeExperiment(base_log_dir, method, "ppo", {'ACRL_LAMBDA': acrl_lambda}, seed=1)
+        exp = UMazeExperiment(base_log_dir, method, "sac", {'ACRL_LAMBDA': acrl_lambda}, seed=1)
         log_dir = os.path.dirname(exp.get_log_dir())
         lines.append(add_plot(log_dir, ax, color, iter_steps=5000))
 
     ax.set_title('U-Maze', fontsize=FONT_SIZE)
-    ax.set_ylabel(r"Episodic Return", fontsize=FONT_SIZE)
+    ax.set_ylabel(r"Success Rate", fontsize=FONT_SIZE)
     ax.set_xlabel(r"Train Steps", fontsize=FONT_SIZE)
 
     if show:
@@ -81,9 +82,10 @@ def performance_plot(ax=None, path=None, base_log_dir="logs", acrl_lambda=0.5):
 
 
 if __name__ == "__main__":
-    os.makedirs("./figures/u_maze", exist_ok=True)
+    exp_name = 'u_maze'
+    os.makedirs("./figures/" + exp_name, exist_ok=True)
     # base_log_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "logs")
     base_log_dir = "./logs"
-    acrl_lambda = 0.5
-    performance_plot(path='./figures/u_maze/' + str(acrl_lambda) + '.pdf', base_log_dir=base_log_dir,
+    acrl_lambda = 0.9
+    performance_plot(path='./figures/' + exp_name + '/sac_' + str(acrl_lambda) + '.pdf', base_log_dir=base_log_dir,
                      acrl_lambda=acrl_lambda)

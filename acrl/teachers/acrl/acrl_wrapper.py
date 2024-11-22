@@ -67,9 +67,9 @@ class ACRLWrapper(BaseWrapper):
             step = np.concatenate((obs, self.cur_context)), step[1], step[2], step[3]
         self.last_obs = obs.copy()
 
-        # insert VAE buffer
+        # insert replay buffer
         if insert:
-            self.teacher.vae.rollout_storage.insert(step=current_step, done=done)
+            self.teacher.auto_encoder.rollout_storage.insert(step=current_step, done=done)
         if update:
             assert wo_context is False
             self.update(step)
