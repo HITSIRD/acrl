@@ -80,7 +80,7 @@ for name_t in all_name:
         # top_down = False
         # goal_obs = True
     elif name_t == "PointMaze2":
-        max_timestep = 150
+        max_timestep = 250
     else:
         max_timestep = 100
 

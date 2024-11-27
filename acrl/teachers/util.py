@@ -5,7 +5,7 @@ import torch
 import pickle
 import numpy as np
 from scipy.spatial.distance import pdist
-# import nadaraya_watson as na
+import nadaraya_watson as na
 
 class Buffer:
 

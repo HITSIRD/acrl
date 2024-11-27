@@ -1,27 +1,34 @@
 import os
+
+import matplotlib.pyplot as plt
 import numpy as np
 from abc import ABC, abstractmethod
 from typing import Tuple, NoReturn
 import torch
+from sympy.solvers.diophantine.diophantine import reconstruct
 
-from acrl.environments.minigrid.envs import AEnv
 from acrl.teachers.abstract_teacher import AbstractTeacher
-from acrl.teachers.acrl.autoencoder import AutoEncoder
-from acrl.teachers.acrl.evaluator import Evaluator
 from acrl.teachers.acrl.util import sample_trajectory, trajectory_embedding, get_latent_map
-from acrl.teachers.acrl.vae import VAE
 from acrl.teachers.acrl.evaluator import Evaluator
+from acrl.teachers.acrl.vq_vae import VQVAE
 from acrl.teachers.dummy_teachers import UniformSampler
 from acrl.util.device import device
+from sklearn.neighbors import KernelDensity
 
+from torch.utils.tensorboard import SummaryWriter
+
+
+# np.seterr(all='raise')
 
 class ACRL(AbstractTeacher):
 
-    def __init__(self, target, initial_mean, initial_std, context_lb, context_ub, config, log_dir, post_sampler=None):
+    def __init__(self, target, initial_state, initial_mean, initial_std, context_lb, context_ub, config, log_dir,
+                 post_sampler=None):
 
         # Create an array if we use the same number of bins per dimension
         self.config = config
         self.target = target
+        self.initial_state = initial_state
         self.context_dim = initial_mean.shape[0]
 
         self.log_dir = log_dir
@@ -32,55 +39,46 @@ class ACRL(AbstractTeacher):
         self.uniform_sampler = UniformSampler(self.context_lb, self.context_ub)
         # self.vae = VAE(self.config)
 
-        self.auto_encoder = AutoEncoder(self.config)
-        # self.evaluator = Evaluator(self.config)
-        self.evaluator = None
+        self.ds_encoder = VQVAE(self.config)
+        self.warmup_step = config['warmup_step']
+        self.uniform = True
         self.policy = None  # sample trajectory to train VAE
 
-        self.teacher = LatentSpacePrediction(initial_mean, initial_std, self.target, initial_mean, self.uniform_sampler,
-                                             self.evaluator, self.config)
+        self.teacher = LatentSpacePrediction(initial_state, initial_mean, initial_std, self.target, initial_mean,
+                                             self.uniform_sampler, self.config)
 
         self.post_sampler = post_sampler
-
-    def initialize_context_buffer(self):
-        self.teacher.initialize(self.uniform_sampler)
+        self.gradient_step = 0
+        self.writer = SummaryWriter(self.log_dir + '/log/VQ')
+        os.makedirs(f'{self.log_dir}/figures', exist_ok=True)
 
     def set_policy(self, policy):
         self.policy = policy
 
-    def update_distribution(self, episode_count, env):
-        if episode_count % self.config['update_freq'] == 0:
+    def update_distribution(self, n_episode, n_step, env):
+        if n_step > self.warmup_step:
+            self.uniform = False
+
+        #  plot
+        if n_episode % 200 == 0:
+            self.plot_proto_task(n_episode)
+            self.plot_dist(n_episode, samples=50)
+
+        if n_episode % self.config['update_freq'] == 0:
             ret = env.get_encountered_contexts(reset=False)[0]
             size = len(ret)
-            ret = np.array(ret)[-min(size, self.config['task_buffer_size']):]
-            print(f'mean of return: {np.mean(ret)}({np.std(ret)})')
+            ret = np.array(ret)[-min(size, 10):]
+            # print(f'mean of return: {np.mean(ret)}({np.std(ret)})')
 
-            # self.evaluator.update(env.get_encountered_contexts)
-            # self.evaluator.plot(episode_count)
+            for _ in range(self.config['num_encoder_update']):
+                loss = self.ds_encoder.update()
+                for k, v in loss.items():
+                    self.writer.add_scalar('train/' + k, v, n_step)
+                    # self.writer.add_scalar(k, v, self.gradient_step)
+                self.gradient_step += 1
 
-            #  evaluate current policy
-            # if hasattr(env.env, 'plot_evaluate_task'):
-            #     print('plot_evaluate_task...')
-            #     env.env.plot_evaluate_task(env, self.policy, self.vae.transition_encoder, episode_count, self.log_dir)
-
-            if np.mean(ret) > self.config['update_delta']:
-                #  plot
-                # if isinstance(env.env, AEnv):
-                #     print('plot_latent_cluster...')
-                #     env.env.plot_latent_cluster(env, self.policy, episode_count, self.teacher,
-                #                                 self.vae.transition_encoder,
-                #                                 self.vae.task_decoder, self.log_dir)
-                #     print('plot_dist...')
-                #     env.env.plot_dist(episode_count, self.teacher, self.log_dir)
-
-                for _ in range(self.config['num_encoder_update']):
-                    self.auto_encoder.update()
-
-                # if not self.config['decode_task']:
-                #     self.vae.update_task_decoder()
-
-                self.teacher.update(env, self.policy, self.auto_encoder)
-                print('update distribution...')
+            self.teacher.update_proto_task(self.policy, self.ds_encoder)
+            self.writer.add_scalar('target_alpha', self.teacher.target_alpha, n_step)
 
     def sample(self):
         task = self._sample()
@@ -90,7 +88,75 @@ class ACRL(AbstractTeacher):
         return task
 
     def _sample(self):
-        return self.teacher.sample()
+        return self.teacher.sample(self.uniform)
+
+    def update_visit(self, state):
+        assert self.teacher.visit_count is not None
+        self.teacher.update_visit(state, self.ds_encoder)
+
+    def plot_proto_task(self, n_episode):
+        if len(self.config['noise_std']) != 2:
+            return
+
+        print('plot proto task...')
+        plt.clf()
+
+        proto_task = self.teacher.proto_task.cpu().numpy()
+        dis = self.teacher.temporal_dis
+
+        vertices = np.array([[self.context_lb[0], self.context_lb[1]],
+                             [self.context_ub[0], self.context_lb[1]],
+                             [self.context_ub[0], self.context_ub[1]],
+                             [self.context_lb[0], self.context_ub[1]],
+                             [self.context_lb[0], self.context_lb[1]]])
+        plt.plot(vertices[:, 0], vertices[:, 1], 'b-')
+
+        plt.scatter(proto_task[:, 0], proto_task[:, 1])
+        for i in range(len(dis)):
+            plt.text(proto_task[i, 0], proto_task[i, 1], f'{dis[i]:.2f}')
+
+        plt.savefig(f'{self.log_dir}/figures/proto_task_{n_episode}.pdf')
+
+        plt.clf()
+
+        proto_task = self.teacher.proto_task.cpu().numpy()
+        visit_count = self.teacher.visit_count
+
+        vertices = np.array([[self.context_lb[0], self.context_lb[1]],
+                             [self.context_ub[0], self.context_lb[1]],
+                             [self.context_ub[0], self.context_ub[1]],
+                             [self.context_lb[0], self.context_ub[1]],
+                             [self.context_lb[0], self.context_lb[1]]])
+        plt.plot(vertices[:, 0], vertices[:, 1], 'b-')
+
+        plt.scatter(proto_task[:, 0], proto_task[:, 1])
+        for i in range(len(dis)):
+            plt.text(proto_task[i, 0], proto_task[i, 1], f'{visit_count[i]}')
+
+        plt.savefig(f'{self.log_dir}/figures/proto_task_visit_{n_episode}.pdf')
+
+    def plot_dist(self, n_episode, samples=100):
+        if len(self.config['noise_std']) != 2:
+            return
+
+        print('plot dist...')
+        plt.clf()
+
+        context = []
+        for i in range(samples):
+            context.append(self.teacher.sample())
+        context = np.array(context)
+
+        vertices = np.array([[self.context_lb[0], self.context_lb[1]],
+                             [self.context_ub[0], self.context_lb[1]],
+                             [self.context_ub[0], self.context_ub[1]],
+                             [self.context_lb[0], self.context_ub[1]],
+                             [self.context_lb[0], self.context_lb[1]]])
+        plt.plot(vertices[:, 0], vertices[:, 1], 'b-')
+
+        plt.scatter(context[:, 0], context[:, 1])
+
+        plt.savefig(f'{self.log_dir}/figures/dist_{n_episode}.pdf')
 
     def save(self, path):
         # self.model.save(os.path.join(path, "teacher_model.pkl"))
@@ -108,57 +174,53 @@ class ACRL(AbstractTeacher):
 
 
 class LatentSpacePrediction:
-    def __init__(self, init_mean, init_std, target, start, uniform_sampler, evaluator, config):
+    def __init__(self, initial_state, init_mean, init_std, target, start, uniform_sampler, config):
         self.config = config
+        self.initial_state = torch.from_numpy(initial_state).float().to(device)
         self.init_mean = torch.from_numpy(np.array(init_mean))
         self.init_std = torch.from_numpy(np.array(init_std))
         self.target = target
         self.start = start
 
-        self.return_delta = config['return_delta']
-        self.step_size = config['step_size']
-        self.curriculum_index = 0
-        self.current_tasks = []
-        self.buffer_size = config['task_buffer_size']
-        self.update_lambda = config['lambda']
-        self.target_return_threshold = config['target_return_threshold']
+        self.target_alpha = 0
         self.task_noise_std = torch.from_numpy(np.array(config['noise_std'])).to(device)
+        self.temporal_dis = None
+        self.top_k = 5
+        self.proto_task = None
+        self.visit_count = np.zeros([config['codebook_k']])
+        self.uncertainty = None
+        self.sort_index = None
 
-        self.enable_lsp = config['enable_lsp']
-        self.enable_ebu = config['enable_ebu']
-
-        self.num_target_samples = config['num_target_samples']
-        self.target_episode_latent = None
-
-        self.target_return = -np.inf
+        self.achieved_task = []
 
         self.uniform_sampler = uniform_sampler
-        self.evaluator = evaluator
-        self.initialize(self.uniform_sampler)
 
-    def initialize(self, sampler):
-        # init_dist = GaussianTorchDistribution(self.init_mean, self.init_std, use_cuda=False, dtype=torch.float64)
+    # def initialize(self, sampler):
+    #     self.current_tasks = [self._sample_gaussian(self.init_mean, self.init_std) for i in
+    #                           range(self.buffer_size)]
 
-        # self.current_tasks = sampler(size=self.buffer_size) #  uniform sampling
+    def sample(self, uniform=False):
+        if uniform or self.temporal_dis is None:
+            return self.uniform_sampler()
 
-        # index = int(max(self.update_lambda, self.ebu_ratio) * self.buffer_size)
-        # if index > 0:
-        #     self.current_tasks[:index] = torch.stack([self._sample_gaussian(self.init_mean, self.init_std) for i in
-        #                                               range(index)])
-        # else:
-        self.current_tasks = [self._sample_gaussian(self.init_mean, self.init_std) for i in
-                              range(self.buffer_size)]
+        if np.random.random() > self.target_alpha:
+            top_index = self.sort_index[:self.top_k]
+            # probs = 1. / (torch.from_numpy(self.visit_count[top_index]) + 0.01)
+            # probs = torch.softmax(1. / torch.from_numpy(self.visit_count[top_index]), dim=-1)
+            probs = torch.softmax(self.temporal_dis[top_index] / np.sqrt(self.visit_count[top_index] + 1.), dim=-1)
+            # probs = torch.softmax(self.temporal_dis, dim=-1)
 
-    def sample(self, buffer=None):
-        if buffer is None:
-            buffer = self.current_tasks
+            distribution = torch.distributions.Categorical(probs=probs)
+            index = distribution.sample()
 
-        if np.random.random() > 0.05:
-            context = self.current_tasks[
-                np.random.randint(len(buffer))] if np.random.random() < self.update_lambda else self.uniform_sampler()
+            # index = torch.argmax(probs)
+
+            index = self.sort_index[index]
+            context = self.proto_task[index]
+            context = context + self._sample_noise()
+            context = context.cpu().numpy()
         else:
             context = self.target
-        # context = self.current_tasks[np.random.randint(len(buffer))]
 
         if isinstance(context, torch.Tensor):
             context = context.cpu().numpy()
@@ -166,112 +228,75 @@ class LatentSpacePrediction:
 
         return context
 
-    def eval_sampler(self):
-        accept = False
-        context = self.uniform_sampler()
-        if self.evaluator.available:
-            while not accept:
-                pred_ret, min_ret, max_ret = self.evaluator.predict(context)
-                min_ret = 0.05
-                max_ret = 0.25
-                pred_ret = np.clip(pred_ret, min_ret, max_ret)
-                # if pred_ret < np.random.random():
-                if (pred_ret - min_ret) / (max_ret - min_ret) < np.random.random():
-                    # print(context)
-                    # print(f'{pred_ret}\t{min_ret}\t{max_ret}')
-                    accept = True
-                else:
-                    context = self.uniform_sampler()
-        return context
+    def reset(self):
+        self.temporal_dis = None
+        self.proto_task = None
+        self.visit_count = np.ones([self.config['codebook_k']])
+        self.uncertainty = None
 
-    def update(self, env, policy, auto_encoder):
-        print('updating task dist...')
-        encoder = auto_encoder.encoder
-        task_decoder = auto_encoder.decoder
+    def update_proto_task(self, policy, ds_encoder):
+        print('updating task distance...')
+        k = self.config['codebook_k']
 
-        task_latent, sampled_tasks, task_returns, horizon = self.latent_map(auto_encoder.rollout_storage, encoder)
-        target_returns = []
+        self.visit_count = np.zeros([k])
+        encoder = ds_encoder.encoder
+        decoder = ds_encoder.decoder
+        codebook = ds_encoder.codebook
+        task_latent = codebook.embedding.weight
 
-        # sample target task embedding
-        for i in range(self.num_target_samples):
-            target_return = sample_trajectory(
-                env,
-                policy,
-                encoder,
-                self.target)
-            target_returns.append(target_return)
-            # print(target_return)
-            if target_return > self.target_return:
-                print(f'target return update: {self.target_return}->{target_return}')
-                self.target_return = target_return
+        with torch.no_grad():
+            reconstruct_state = decoder(task_latent)
+            proto_task = self.state2task(reconstruct_state)  # TODO state2task
+            # proto_task = reconstruct_state  # TODO state2task
+            z_start = encoder(self.initial_state)
+            z_q_st, z_q, indices = codebook.straight_through(z_start)
+            rec_start = decoder(z_q_st)
 
-        target_returns = np.array(target_returns)
+            state = {'observation': rec_start.unsqueeze(0).repeat(k, 1),
+                     'achieved_goal': self.state2task(rec_start).unsqueeze(0).repeat(k, 1),
+                     'desired_goal': proto_task}
+            action, _ = policy.actor.action_log_prob(state)
+            q = torch.cat(policy.critic_target(state, action), dim=1)
+            q, _ = torch.min(q, dim=1, keepdim=True)
+            temporal_dis = torch.log(1. + (1. - policy.gamma) * q) / np.log(policy.gamma)
 
-        self.target_return = -np.inf  # reset]
-        target_latent = encoder(torch.from_numpy(self.target).float().to(device))
-        start_latent = encoder(torch.from_numpy(self.start).float().to(device))
+            _, sort_index = torch.sort(temporal_dis.flatten(), descending=True)
 
-        task_latent = torch.stack(task_latent)
-        task_returns = torch.from_numpy(np.array(task_returns)).cpu().numpy().flatten()
-        # index = np.argwhere((task_returns > self.return_delta) & (task_returns < -10)).flatten()
-        index = np.argwhere(task_returns > self.return_delta).flatten()
-        if len(index.shape) == 0:
-            print('nothing to update')
-            return
+        # print(f'dis = {dis}')
+        self.temporal_dis = temporal_dis.cpu().flatten()
+        self.sort_index = sort_index.cpu().flatten()
+        self.uncertainty = np.zeros((task_latent.shape[0],))
+        self.proto_task = proto_task
 
-        task_latent = task_latent[index]
-        convert = target_returns.mean() >= self.target_return_threshold
+        self.update_alpha()
 
-        if self.enable_ebu and not convert:
-            latent_distance = (task_latent - start_latent).norm(dim=-1).squeeze(-1)
-            _, latent_index = torch.sort(latent_distance, descending=True)
-            self.EBU_update(sampled_tasks, index, latent_index)
+        # print(self.temporal_dis)
+        # self.reset()
 
-        if self.enable_lsp and convert:
-            latent_distance = (task_latent - target_latent).norm(dim=-1).squeeze(-1)
-            _, latent_index = torch.sort(latent_distance)
-            self.LSP_update(task_latent, target_latent, latent_index, task_decoder)
+    def update_visit(self, state, ds_encoder):
+        with torch.no_grad():
+            z_e = ds_encoder.encoder(torch.from_numpy(state).to(device))
+            _, _, index = ds_encoder.codebook.straight_through(z_e)
 
-        self.curriculum_index += 1
-        # print(self.current_tasks.view(-1, self.current_tasks.shape[0] // 16,
-        #                               self.current_tasks.shape[-1]).cpu().detach().numpy())
+        self.visit_count[index] += 1
 
-    def LSP_update(self, task_latent, target_latent, latent_index, task_decoder):
-        #  task decoder prediction method
-        task_latent = task_latent[latent_index]  # sort
-        task_latent = task_latent + self.step_size * (
-                target_latent - task_latent)  # updated latent by linear interpolation
-        if self.config['task_pred_type'] == 'param':
-            updated_tasks = task_decoder(task_latent).squeeze(1)
-            # if self.config['add_noise']:
-            #     noise = self.task_noise_std * torch.randn(size=updated_tasks.shape).to(device)
-            #     updated_tasks += noise
-        elif self.config['task_pred_type'] == 'categ':
-            updated_tasks = torch.argmax(task_decoder(task_latent), dim=-1)
-            updated_tasks = torch.cat((updated_tasks // 8 + 1, updated_tasks % 8 + 1), dim=-1)
+    def update_alpha(self):
+        kde = KernelDensity(kernel='gaussian', bandwidth='silverman')
+
+        # kde.fit(self.proto_task.cpu().numpy())
+        kde.fit(np.array(self.achieved_task))
+
+        log_density = kde.score_samples([self.target])
+        self.target_alpha = min(1.0, np.exp(log_density)[0] + 0.01)
+
+    def _sample_noise(self):
+        return self.task_noise_std * torch.randn(len(self.task_noise_std)).to(device)
+
+    def state2task(self, state):
+        if len(state.shape) == 1:
+            return state[:2]
         else:
-            raise NotImplementedError
-
-        self.current_tasks = updated_tasks.detach()
-        print(f'LSP update {len(updated_tasks)} samples')
-
-    def EBU_update(self, sampled_tasks, index, latent_index):
-        sampled_tasks = torch.stack(sampled_tasks).to(device)
-        sampled_tasks = sampled_tasks[index]
-        ls_task = []
-        for i in range(index.shape[0]):
-            s_i = min(int(np.random.exponential(1.0)), index.shape[0])
-            # print(sampled_tasks[latent_index[s_i]])
-            noise = self.task_noise_std * torch.randn(size=sampled_tasks[i].shape).to(device)
-            ls_task.append(sampled_tasks[latent_index[s_i]] + noise)
-
-        ls_task = torch.stack(ls_task).detach()
-        print(f'EBU update {len(ls_task)} samples')
-        self.current_tasks = ls_task
-
-    def latent_map(self, buffer, encoder):
-        latent, tasks, episode_return, horizon = get_latent_map(buffer, encoder)
-        return latent, tasks, episode_return, horizon
+            return state[:, :2]
 
     def _sample_gaussian(self, mu, std, num=None):
         if num is None:

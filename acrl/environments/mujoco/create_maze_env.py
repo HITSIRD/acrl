@@ -8,7 +8,6 @@ import copy
 from gym import Wrapper
 from gym.envs.registration import EnvSpec
 
-
 class GoalWrapper(Wrapper):
     def __init__(self, env, maze_size_scaling, random_start, low, high, fix_goal=True, top_down=False, test=None, goal_obs=False):
         super(GoalWrapper, self).__init__(env)
@@ -109,15 +108,14 @@ class GoalWrapper(Wrapper):
         distance = np.linalg.norm(observation[:self.goal_dim] - self.goal[:self.goal_dim], axis=-1)
         info['is_success'] = done = (distance < self.distance_threshold)
         if self.reward_type == "sparse":
-            reward = -(distance > self.distance_threshold).astype(np.float32) + reward
+            reward = -(distance > self.distance_threshold).astype(np.float32)
         else:
             # normlization
             reward = -distance * 0.1
-        if self.top_down:
-            mask = np.array([0.0] * 2 + [1.0] * (observation.shape[0] - 2))
-            observation = observation * mask
+        # if self.top_down:
+        #     mask = np.array([0.0] * 2 + [1.0] * (observation.shape[0] - 2))
+        #     observation = observation * mask
 
-        # reward = -distance * 0.1 + reward
         return observation, reward, done, info
 
     def reset(self, **kwargs):
@@ -147,10 +145,10 @@ class GoalWrapper(Wrapper):
         out = {'observation': observation, 'desired_goal': self.goal}
         out['achieved_goal'] = observation[..., :self.goal_dim]
         # out['achieved_goal'] = observation[..., 3:5]
-        if self.top_down:
-            # print("obs", out['observation'].shape)
-            mask = np.array([0.0] * 2 + [1.0] * (out['observation'].shape[0] - 2))
-            observation = observation * mask
+        # if self.top_down:
+        #     # print("obs", out['observation'].shape)
+        #     mask = np.array([0.0] * 2 + [1.0] * (out['observation'].shape[0] - 2))
+        #     observation = observation * mask
         return observation
 
 

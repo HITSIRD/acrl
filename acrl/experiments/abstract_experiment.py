@@ -1,6 +1,8 @@
 import json
 import os
 import time
+
+import gym.spaces
 import torch
 import pickle
 import numpy as np
@@ -297,18 +299,24 @@ class Learner(Enum):
         if self.ppo() and not issubclass(type(env), VecEnv):
             env = DummyVecEnv([lambda: env])
 
+        if isinstance(env.observation_space, gym.spaces.Dict):
+            obs_dim = env.observation_space.spaces['observation'].shape[0] + \
+                      env.observation_space.spaces['desired_goal'].shape[0]
+        else:
+            obs_dim = env.observation_space.shape[0]
+
         if self.ppo():
             model = PPO(PPOMlpPolicy, env, **parameters["common"], **parameters[str(self)])
-            interface = PPOInterface(model, env.observation_space.shape[0])
+            interface = PPOInterface(model, obs_dim)
         elif self.sac():
-            model = SAC(SACMlpPolicy, env, **parameters["common"], **parameters[str(self)])
-            interface = SACInterface(model, env.observation_space.shape[0])
+            model = SAC(env=env, **parameters["common"], **parameters[str(self)])
+            interface = SACInterface(model, obs_dim)
         elif self.td3():
             model = TD3(TD3MlpPolicy, env, **parameters["common"], **parameters[str(self)])
-            interface = TD3Interface(model, env.observation_space.shape[0])
+            interface = TD3Interface(model, obs_dim)
         else:
             model = DDPG(DDPGMlpPolicy, env, **parameters["common"], **parameters[str(self)])
-            interface = DDPGInterface(model, env.observation_space.shape[0])
+            interface = DDPGInterface(model, obs_dim)
 
         return model, interface
 
@@ -339,7 +347,7 @@ class Learner(Enum):
             return Learner.SAC
         elif string == str(Learner.TD3):
             return Learner.TD3
-        elif string==str(Learner.DDPG):
+        elif string == str(Learner.DDPG):
             return Learner.DDPG
         else:
             raise RuntimeError("Invalid string: '" + string + "'")
@@ -425,7 +433,8 @@ class AbstractExperiment(ABC):
                      CurriculumType.ACL: ["ACL_EPS", "ACL_ETA"],
                      CurriculumType.PLR: ["PLR_REPLAY_RATE", "PLR_BETA", "PLR_RHO"],
                      CurriculumType.VDS: ["VDS_NQ", "VDS_LR", "VDS_EPOCHS", "VDS_BATCHES"],
-                     CurriculumType.ACRL: ["ACRL_LAMBDA"]}
+                     CurriculumType.ACRL: [],
+                     }
 
     def __init__(self, base_log_dir, curriculum_name, learner_name, parameters, seed, view=False):
         self.base_log_dir = base_log_dir
@@ -469,7 +478,8 @@ class AbstractExperiment(ABC):
                              "GG_P_OLD": float, "DELTA": float, "EPS": float, "MAZE_TYPE": str, "ACL_EPS": float,
                              "ACL_ETA": float, "PLR_REPLAY_RATE": float, "PLR_BETA": float, "PLR_RHO": float,
                              "VDS_NQ": int, "VDS_LR": float, "VDS_EPOCHS": int, "VDS_BATCHES": int,
-                             "ACRL_LAMBDA": float}
+                             # "ACRL_LAMBDA": float
+                             }
         for key in sorted(self.parameters.keys()):
             if key not in allowed_overrides:
                 raise RuntimeError("Parameter '" + str(key) + "'not allowed'")
@@ -495,22 +505,20 @@ class AbstractExperiment(ABC):
                             leaner_string + override_appendix + self.get_other_appendix(), "seed-" + str(self.seed))
 
     def train(self):
-        model, timesteps, callback_params = self.create_experiment()
         log_directory = self.get_log_dir()
-
         if os.path.exists(log_directory):
             print("Log directory already exists! Going directly to evaluation")
             return
-        else:
-            pass
 
-        callback = ExperimentCallback(log_directory=log_directory, **callback_params)
-        model.learn(total_timesteps=timesteps, reset_num_timesteps=False, callback=callback)
+        model, timesteps, callback_params = self.create_experiment()
 
         if self.curriculum == CurriculumType.ACRL:
             with open(os.path.join(log_directory, 'config.json'), "w") as f:
                 json.dump(callback_params['env_wrapper'].teacher.config, f)
                 print('write config to {}'.format(os.path.join(log_directory, 'config.json')))
+
+        callback = ExperimentCallback(log_directory=log_directory, **callback_params)
+        model.learn(total_timesteps=timesteps, reset_num_timesteps=False, callback=callback)
 
     def evaluate(self):
         log_dir = self.get_log_dir()

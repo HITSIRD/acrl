@@ -14,7 +14,7 @@ def main():
     parser.add_argument("--learner", type=str, default="ppo", choices=["ppo", "sac", "td3", "ddpg"])
     parser.add_argument("--env", type=str, default="minigrid",
                         choices=["point_mass_2d", "maze", "minigrid-a", "minigrid-b", "minigrid-c", "minigrid-d",
-                                 "minigrid-e", "minigrid-f", "minigrid-g", "minigrid-h", "u-maze",
+                                 "minigrid-e", "minigrid-f", "minigrid-g", "minigrid-h", "u-maze", "n-maze",
                                  "ant-u-maze", "swimmer-maze", "fetchpush"])
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--n_cores", type=int, default=8)
@@ -56,6 +56,9 @@ def main():
     elif args.env == 'u-maze':
         from acrl.experiments.u_maze_experiment import UMazeExperiment
         exp = UMazeExperiment(args.base_log_dir, args.type, args.learner, parameters, args.seed)
+    elif args.env == 'n-maze':
+        from acrl.experiments.n_maze_experiment import NMazeExperiment
+        exp = NMazeExperiment(args.base_log_dir, args.type, args.learner, parameters, args.seed)
     elif args.env == 'ant-u-maze':
         from acrl.experiments.ant_u_maze_experiment import AntUMazeExperiment
         exp = AntUMazeExperiment(args.base_log_dir, args.type, args.learner, parameters, args.seed)

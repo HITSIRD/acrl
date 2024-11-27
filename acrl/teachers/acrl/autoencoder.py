@@ -24,8 +24,9 @@ class AutoEncoder(nn.Module):
                                               action_dim=self.config['action_dim'],
                                               task_dim=self.config['context_dim'])
 
-        self.encoder_optimizer = optim.Adam(self.encoder.parameters(), lr=0.001)
-        self.decoder_optimizer = optim.Adam(self.decoder.parameters(), lr=0.001)
+        # self.encoder_optimizer = optim.Adam(self.encoder.parameters(), lr=0.0005)
+        # self.decoder_optimizer = optim.Adam(self.decoder.parameters(), lr=0.0005)
+        self.opt = optim.Adam([*self.encoder.parameters(), *self.decoder.parameters()], lr=0.0005)
 
     def initialise_encoder(self):
         """ Initialises and returns an RNN transition_encoder """
@@ -59,35 +60,56 @@ class AutoEncoder(nn.Module):
         z = self.encoder(x)
         return z
 
-    def update(self):
-        x_pair, h_pair = self.rollout_storage.get_batch()
+    def update(self, policy):
+        init_obs_pair, init_action_pair, x_pair, h_pair = self.rollout_storage.get_batch(batchsize=64)
 
         # batch_size x 2 x x_dim
-        z_1 = self.encoder(x_pair[:, 0:1, :])
-        z_2 = self.encoder(x_pair[:, 1:2, :])
+        z_1 = self.encoder(x_pair[:, 0])
+        z_2 = self.encoder(x_pair[:, 1])
 
         loss_func = nn.MSELoss()
-        target = torch.abs(h_pair[:, 0] - h_pair[:, 1])
+        huber_loss = nn.HuberLoss()
+        # target = torch.abs(h_pair[:, 0] - h_pair[:, 1])
+
+        with torch.no_grad():
+            q_1 = torch.cat(policy.critic_target(torch.cat([init_obs_pair[:, 0], x_pair[:, 0]], -1), init_action_pair[:, 0]), dim=1)
+            q_1, _ = torch.min(q_1, dim=1, keepdim=True)
+            q_2 = torch.cat(policy.critic_target(torch.cat([init_obs_pair[:, 1], x_pair[:, 1]], -1), init_action_pair[:, 0]), dim=1)
+            q_2, _ = torch.min(q_2, dim=1, keepdim=True)
+            h_1 = torch.log(1. + (1. - policy.gamma) * q_1) / np.log(policy.gamma)
+            h_2 = torch.log(1. + (1. - policy.gamma) * q_2) / np.log(policy.gamma)
+            target = torch.abs(h_1 - h_2)
+
+        print(target.mean())
         dis_loss = loss_func(torch.norm(z_1 - z_2, dim=-1), target)
         # loss = recon_loss + dis_loss
         # loss = dis_loss
 
-        self.encoder_optimizer.zero_grad()
-        dis_loss.backward()
-        self.encoder_optimizer.step()
+        # self.encoder_optimizer.zero_grad()
+        # dis_loss.backward()
+        # self.encoder_optimizer.step()
 
-        rec_x_1 = self.decoder(z_1.detach())
-        rec_x_2 = self.decoder(z_2.detach())
-        recon_loss = loss_func(x_pair[:, 0:1, :], rec_x_1) + loss_func(x_pair[:, 1:2, :], rec_x_2)
+        # rec_x_1 = self.decoder(z_1.detach())
+        # rec_x_2 = self.decoder(z_2.detach())
+        rec_x_1 = self.decoder(z_1)
+        rec_x_2 = self.decoder(z_2)
 
-        self.decoder_optimizer.zero_grad()
-        recon_loss.backward()
-        self.decoder_optimizer.step()
+        recon_loss = loss_func(x_pair[:, 0], rec_x_1) + loss_func(x_pair[:, 1], rec_x_2)
+
+        # self.decoder_optimizer.zero_grad()
+        # recon_loss.backward()
+        # self.decoder_optimizer.step()
+
+        loss = dis_loss + recon_loss
+        self.opt.zero_grad()
+        loss.backward()
+        self.opt.step()
 
         loss_dir = {}
         loss_dir['recon_loss'] = recon_loss.mean()
         loss_dir['dis_loss'] = dis_loss.mean()
-        # print(dis_loss.mean())
+        print(dis_loss.mean())
+        print(recon_loss.mean())
         # loss_dir['loss'] = loss.mean()
         return loss_dir
 
@@ -117,8 +139,8 @@ class RolloutStorage(object):
         self.buffer_len = 0  # how much of the buffer has been fill
 
         if self.max_buffer_size > 0:
-            # self.prev_state = torch.zeros((self.max_buffer_size, self.max_traj_len, self.obs_dim))
-            # self.action = torch.zeros((self.max_buffer_size, self.max_traj_len, action_dim))
+            self.prev_state = torch.zeros((self.max_buffer_size, self.max_traj_len, self.obs_dim))
+            self.action = torch.zeros((self.max_buffer_size, self.max_traj_len, action_dim))
             self.reward = torch.zeros((self.max_buffer_size, self.max_traj_len, 1))
             # self.next_state = torch.zeros((self.max_buffer_size, self.max_traj_len, self.obs_dim))
             self.task = torch.zeros((self.max_buffer_size, task_dim))
@@ -133,8 +155,8 @@ class RolloutStorage(object):
     def insert(self, step=None, trajectory=None, done=False):
         if step is not None:
             prev_state, action, reward, next_state, task = step
-            # self.prev_state[self.insert_idx, self.step_idx] = torch.from_numpy(prev_state)
-            # self.action[self.insert_idx, self.step_idx] = torch.tensor(action)
+            self.prev_state[self.insert_idx, self.step_idx] = torch.from_numpy(prev_state)
+            self.action[self.insert_idx, self.step_idx] = torch.tensor(action)
             self.reward[self.insert_idx, self.step_idx] = torch.tensor([reward])
             # self.next_state[self.insert_idx, self.step_idx] = torch.from_numpy(next_state)
             self.trajectory_lens[self.insert_idx] = self.step_idx + 1
@@ -152,8 +174,8 @@ class RolloutStorage(object):
         elif trajectory is not None:
             prev_state, action, reward, next_state, task = trajectory
             trajectory_len = len(action)
-            # self.prev_state[self.insert_idx, :trajectory_len] = torch.stack(prev_state).squeeze(1)
-            # self.action[self.insert_idx, :trajectory_len] = torch.stack(action).squeeze(1)
+            self.prev_state[self.insert_idx, :trajectory_len] = torch.stack(prev_state).squeeze(1)
+            self.action[self.insert_idx, :trajectory_len] = torch.stack(action).squeeze(1)
             self.reward[self.insert_idx, :trajectory_len] = torch.stack(reward).unsqueeze(1)
             # self.next_state[self.insert_idx, :trajectory_len] = torch.stack(next_state).squeeze(1)
             self.task[self.insert_idx] = torch.from_numpy(np.array(task))
@@ -176,10 +198,10 @@ class RolloutStorage(object):
         index = np.argwhere(self.episode_return[:self.buffer_len] > return_delta).flatten()
         # assert index.size > 0
         size = min(len(index), batchsize)
-        if index.size > 0:
-            rollout_indices = index[np.random.choice(len(index), size, replace=replace)]
-        else:
-            rollout_indices = np.random.choice(self.buffer_len, batchsize, replace=replace)
+        # if index.size > 0:
+        #     rollout_indices = index[np.random.choice(len(index), size, replace=replace)]
+        # else:
+        #     rollout_indices = np.random.choice(self.buffer_len, batchsize, replace=replace)
 
         # trajectory_lens = self.trajectory_lens[rollout_indices]
         # max_lens = np.max(trajectory_lens)
@@ -200,14 +222,20 @@ class RolloutStorage(object):
         #
         # return rewards.to(device), tasks.to(device), trajectory_lens
 
+        init_state_pairs = []
+        init_action_pairs = []
         task_pairs = []
         horizon_pairs = []
         for i in range(size):
             index_1, index_2 = np.random.choice(index, size=2, replace=False)
+            init_state_pairs.append([self.prev_state[index_1][0], self.prev_state[index_2][0]])
+            init_action_pairs.append([self.action[index_1][0], self.action[index_2][0]])
             task_pairs.append([self.task[index_1], self.task[index_2]])
             horizon_pairs.append([self.trajectory_lens[index_1], self.trajectory_lens[index_2]])
 
+        init_state_pairs = torch.from_numpy(np.array(init_state_pairs)).float().to(device)
+        init_action_pairs = torch.from_numpy(np.array(init_action_pairs)).float().to(device)
         task_pairs = torch.from_numpy(np.array(task_pairs)).float().to(device)
         horizon_pairs = torch.from_numpy(np.array(horizon_pairs)).float().to(device)
 
-        return task_pairs, horizon_pairs
+        return init_state_pairs, init_action_pairs, task_pairs, horizon_pairs

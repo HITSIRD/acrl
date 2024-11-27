@@ -20,13 +20,13 @@ from scipy.stats import multivariate_normal
 from acrl.teachers.acrl.config.ant_u_maze import config
 from acrl.util.device import device_type
 
-os.environ[
-    'LD_LIBRARY_PATH'] = '$LD_LIBRARY_PATH:/home/wenyongyan/.mujoco/mujoco210/bin:$LD_LIBRARY_PATH:/usr/lib/nvidia'
+# os.environ[
+#     'LD_LIBRARY_PATH'] = '$LD_LIBRARY_PATH:/home/wenyongyan/.mujoco/mujoco210/bin:$LD_LIBRARY_PATH:/usr/lib/nvidia'
 
 # os.environ['LD_LIBRARY_PATH'] = '$LD_LIBRARY_PATH:/usr/lib/nvidia'
-os.environ['LD_PRELOAD'] = '/usr/lib/x86_64-linux-gnu/libGLEW.so'
+# os.environ['LD_PRELOAD'] = '/usr/lib/x86_64-linux-gnu/libGLEW.so'
 # os.add_dll_directory('/home/wenyongyan/.mujoco/mujoco210/bin')
-os.environ['LD_PRELOAD'] = '/home/wenyongyan/.mujoco/mujoco210/bin/libglewegl.so'
+# os.environ['LD_PRELOAD'] = '/home/wenyongyan/.mujoco/mujoco210/bin/libglewegl.so'
 
 
 def context_post_processing(context):

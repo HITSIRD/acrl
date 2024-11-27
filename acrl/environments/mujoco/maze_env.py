@@ -37,9 +37,11 @@ class MazeEnv(gym.Env):
             top_down_view=False,
             manual_collision=False,
             goal=None,
-            context=[1, 1],
+            context=None,
             *args,
             **kwargs):
+        if context is None:
+            context = [1, 1]
         self._maze_id = maze_id
         print("maze id in maze_env.py:", self._maze_id, "!!!")
 
@@ -630,7 +632,7 @@ class MazeEnv(gym.Env):
             # print(self.EPS, next_obs[:2], self.goal[:2])
             # done = bool(((next_obs[:2] - self.goal[:2]) ** 2).sum() < 1.5)
             done = bool(((next_obs[:2] - self.goal[:2]) ** 2).sum() < 1.0)
-            inner_reward = int(done)
+            inner_reward = 0 if done else -1
 
         if enable_render:
             self.render()

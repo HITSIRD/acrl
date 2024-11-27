@@ -41,11 +41,11 @@ def performance_plot(ax=None, path=None, base_log_dir="logs", acrl_lambda=0.5):
     for method, color in zip(["self_paced", "random", "default", "wasserstein", "goal_gan", "alp_gmm",
                               "acl", "plr", "vds", "acrl"],
                              ["C0", "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9"]):
-        exp = UMazeExperiment(base_log_dir, method, "sac", {'ACRL_LAMBDA': acrl_lambda}, seed=1)
+        exp = UMazeExperiment(base_log_dir, method, "sac", {}, seed=1)
         log_dir = os.path.dirname(exp.get_log_dir())
-        lines.append(add_plot(log_dir, ax, color, iter_steps=5000))
+        lines.append(add_plot(log_dir, ax, color, iter_steps=2500))
 
-    ax.set_title('U-Maze', fontsize=FONT_SIZE)
+    ax.set_title('Point U-Maze', fontsize=FONT_SIZE)
     ax.set_ylabel(r"Success Rate", fontsize=FONT_SIZE)
     ax.set_xlabel(r"Train Steps", fontsize=FONT_SIZE)
 
@@ -86,6 +86,5 @@ if __name__ == "__main__":
     os.makedirs("./figures/" + exp_name, exist_ok=True)
     # base_log_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "logs")
     base_log_dir = "./logs"
-    acrl_lambda = 0.9
-    performance_plot(path='./figures/' + exp_name + '/sac_' + str(acrl_lambda) + '.pdf', base_log_dir=base_log_dir,
-                     acrl_lambda=acrl_lambda)
+    # acrl_lambda = 0.9
+    performance_plot(path='./figures/' + exp_name + '/success_rate.pdf', base_log_dir=base_log_dir)

@@ -142,6 +142,30 @@ class RewardDecoder(nn.Module):
         return self.fc_out(h)
 
 
+class StateDecoder(nn.Module):
+    def __init__(self,
+                 layers,
+                 latent_dim,
+                 state_dim):
+        super(StateDecoder, self).__init__()
+
+        curr_input_dim = latent_dim
+        self.fc_layers = nn.ModuleList([])
+        for i in range(len(layers)):
+            self.fc_layers.append(nn.Linear(curr_input_dim, layers[i]))
+            curr_input_dim = layers[i]
+
+        output_dim = state_dim
+        self.fc_out = nn.Linear(curr_input_dim, output_dim)
+
+    def forward(self, latent):
+        h = latent
+        for i in range(len(self.fc_layers)):
+            h = F.relu(self.fc_layers[i](h))
+
+        return self.fc_out(h)
+
+
 class TaskDecoder(nn.Module):
     def __init__(self,
                  layers,
@@ -165,5 +189,4 @@ class TaskDecoder(nn.Module):
             # dropout = torch.nn.Dropout(p=0.05)
             # h = dropout(h)
 
-        # return 8 * F.sigmoid(self.fc_out(h))
         return self.fc_out(h)
